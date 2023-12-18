@@ -241,7 +241,11 @@ func l2ImmutableDeployer(backend *backends.SimulatedBackend, opts *bind.Transact
 		}
 		_, tx, _, err = bindings.DeployOptimismMintableERC20Factory(opts, backend, bridge)
 	case "L2ERC721Bridge":
-		_, tx, _, err = bindings.DeployL2ERC721Bridge(opts, backend)
+		otherBridge, ok := deployment.Args[0].(common.Address)
+		if !ok {
+			return nil, fmt.Errorf("invalid type for otherBridge")
+		}
+		_, tx, _, err = bindings.DeployL2ERC721Bridge(opts, backend, otherBridge)
 	case "OptimismMintableERC721Factory":
 		bridge, ok := deployment.Args[0].(common.Address)
 		if !ok {
