@@ -28,16 +28,7 @@ func setupL2OutputOracle() (common.Address, *bind.TransactOpts, *backends.Simula
 		return common.Address{}, nil, nil, nil, err
 	}
 	backend := backends.NewSimulatedBackend(core.GenesisAlloc{from: {Balance: big.NewInt(params.Ether)}}, 50_000_000)
-	_, _, contract, err := bindings.DeployL2OutputOracle(
-		opts,
-		backend,
-		big.NewInt(10),
-		big.NewInt(2),
-		big.NewInt(0),
-		big.NewInt(0),
-		from,
-		common.Address{0xdd},
-		big.NewInt(100))
+	_, _, contract, err := bindings.DeployL2OutputOracle(opts, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, nil, err
 	}
