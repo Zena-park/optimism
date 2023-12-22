@@ -15,19 +15,19 @@ import { Constants } from "src/libraries/Constants.sol";
 ///         L2 on the L2 side. Users are generally encouraged to use this contract instead of lower
 ///         level message passing contracts.
 contract L2CrossDomainMessenger is CrossDomainMessenger, ISemver {
-    /// @custom:semver 1.8.0
-    string public constant version = "1.8.0";
+    /// @custom:semver 1.9.0
+    string public constant version = "1.9.0";
 
     /// @notice Constructs the L2CrossDomainMessenger contract.
-    /// @param _l1CrossDomainMessenger Address of the L1CrossDomainMessenger contract.
+    /// @param _l1CrossDomainMessenger Address of the L1CrossDomainMessenger contract on the other network.
     constructor(address _l1CrossDomainMessenger) CrossDomainMessenger() {
-        initialize({ _otherMessenger: _l1CrossDomainMessenger });
+        initialize({ _l1CrossDomainMessenger: _l1CrossDomainMessenger });
     }
 
     /// @notice Initializer.
-    /// @param _otherMessenger Address of the L1CrossDomainMessenger contract.
-    function initialize(address _otherMessenger) public initializer {
-        __CrossDomainMessenger_init({ _otherMessenger: _otherMessenger });
+    /// @param _l1CrossDomainMessenger Address of the L1CrossDomainMessenger contract on the other network.
+    function initialize(address _l1CrossDomainMessenger) public initializer {
+        __CrossDomainMessenger_init({ _otherMessenger: _l1CrossDomainMessenger });
     }
 
     /// @custom:legacy
