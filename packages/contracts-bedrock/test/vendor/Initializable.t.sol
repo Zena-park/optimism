@@ -141,7 +141,7 @@ contract Initializer_Test is Bridge_Initializer {
         contracts.push(
             InitializeableContract({
                 target: address(l2ERC721Bridge),
-                initCalldata: abi.encodeCall(l2ERC721Bridge.initialize, (l2CrossDomainMessenger, address(l1ERC721Bridge))),
+                initCalldata: abi.encodeCall(l2ERC721Bridge.initialize, (address(l1ERC721Bridge))),
                 initializedSlotVal: deploy.loadInitializedSlot("L2ERC721Bridge", false)
             })
         );
