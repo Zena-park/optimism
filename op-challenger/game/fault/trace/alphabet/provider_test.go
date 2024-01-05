@@ -17,33 +17,7 @@ func alphabetClaim(index *big.Int, claim *big.Int) common.Hash {
 	return alphabetStateHash(BuildAlphabetPreimage(index, claim))
 }
 
-func TestAlphabetProvider_Step(t *testing.T) {
-	depth := types.Depth(2)
-	startingL2BlockNumber := big.NewInt(1)
-
-	ap := NewTraceProvider(startingL2BlockNumber, depth)
-
-	// Start at the absolute prestate as the stateData
-	claim := BuildAlphabetPreimage(big.NewInt(0), absolutePrestateInt)
-	claim = ap.step(claim)
-	startingTraceIndex := new(big.Int).Lsh(startingL2BlockNumber, 4)
-	startingClaim := new(big.Int).Add(absolutePrestateInt, startingTraceIndex)
-	require.Equal(t, BuildAlphabetPreimage(startingTraceIndex, startingClaim), claim)
-
-	// Step again, which should increment both the claim and trace index by 1
-	claim = ap.step(claim)
-	nextTraceIndex := new(big.Int).Add(startingTraceIndex, big.NewInt(1))
-	nextClaim := new(big.Int).Add(startingClaim, big.NewInt(1))
-	require.Equal(t, BuildAlphabetPreimage(nextTraceIndex, nextClaim), claim)
-
-	// Step again, which should increment both the claim and trace index by 1
-	claim = ap.step(claim)
-	nextTraceIndex = new(big.Int).Add(nextTraceIndex, big.NewInt(1))
-	nextClaim = new(big.Int).Add(nextClaim, big.NewInt(1))
-	require.Equal(t, BuildAlphabetPreimage(nextTraceIndex, nextClaim), claim)
-}
-
-// TestAlphabetProvider_Get_ClaimsByTraceIndex tests the [fault.AlphabetProvider] Get function.
+// TestAlphabetProvider_Get_ClaimsByTraceIndex tests the Get function.
 func TestAlphabetProvider_Get_ClaimsByTraceIndex(t *testing.T) {
 	// Create a new alphabet provider.
 	depth := types.Depth(3)
