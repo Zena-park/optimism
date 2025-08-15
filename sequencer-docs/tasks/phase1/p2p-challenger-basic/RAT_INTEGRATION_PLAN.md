@@ -11,57 +11,57 @@ RAT 시스템의 전체 서비스 플로우는 다음과 같습니다:
 
 ```mermaid
 flowchart TD
-    A[챌린저 시작<br/>트리거 비율: 10%] --> B[P2P 네트워크 연결<br/>Discovery Service]
+    A[챌린저 시작 - 트리거 비율 10%] --> B[P2P 네트워크 연결 - Discovery Service]
     B --> C[L1 체인 모니터링]
-    C --> D[Dispute Game 생성 감지<br/>(프로포저가 생성)]
+    C --> D[Dispute Game 생성 감지 - 프로포저가 생성]
     D --> E{Dispute Game 발생?}
     E -->|Yes| F[동시 실행 시작]
     E -->|No| C
 
-    F --> G[직접 검증<br/>Enhanced Verifier]
-    F --> H[Attention Test<br/>트리거 판단]
+    F --> G[직접 검증 - Enhanced Verifier]
+    F --> H[Attention Test - 트리거 판단]
 
-    G --> I[상태 루트 검증<br/>배치 체커<br/>L1/L2 일치성 확인]
+    G --> I[상태 루트 검증 - 배치 체커 - L1/L2 일치성 확인]
     I --> J[검증 결과]
     J --> K{검증 결과}
-    K -->|이상 감지| L[Dispute Game 참여<br/>추가 보증금 지불]
+    K -->|이상 감지| L[Dispute Game 참여 - 추가 보증금 지불]
     K -->|정상| M[정상 - 게임 참여 안함]
 
-    H --> N[배치 번호 % 100<br/>트리거 비율보다 작음?]
-    N -->|Yes| O[챌린저 선택<br/>개인별 설정에 따라]
+    H --> N[배치 번호 % 100 < 트리거 비율?]
+    N -->|Yes| O[챌린저 선택 - 개인별 설정에 따라]
     N -->|No| P[트리거 안함]
-    O --> Q[Attention 질문 전송<br/>다른 챌린저에게]
+    O --> Q[Attention 질문 전송 - 다른 챌린저에게]
 
     Q --> R[Attention 응답 대기]
     R --> S[응답 수신]
     S --> T[응답 검증]
-    T --> U[평판 업데이트<br/>질문자/응답자]
+    T --> U[평판 업데이트 - 질문자/응답자]
 
-    L --> V[평판 관리<br/>양방향 평판 시스템]
+    L --> V[평판 관리 - 양방향 평판 시스템]
     M --> V
     U --> V
     P --> V
 
-    V --> DD[게임 최종화 대기<br/>(airgap period)]
+    V --> DD[게임 최종화 대기 - airgap period]
     DD --> EE{게임 종료}
     EE -->|최종화 완료| FF[보증금 분배 모드 결정]
     EE -->|미완료| DD
 
     FF --> GG{게임 상태}
-    GG -->|Proper Game| HH[NORMAL 모드<br/>게임 결과에 따른 분배]
-    GG -->|Improper Game| II[REFUND 모드<br/>원래 보증금 환급]
+    GG -->|Proper Game| HH[NORMAL 모드 - 게임 결과에 따른 분배]
+    GG -->|Improper Game| II[REFUND 모드 - 원래 보증금 환급]
 
-    HH --> JJ[프로포저 보증금 환급<br/>claimCredit() 호출]
+    HH --> JJ[프로포저 보증금 환급 - claimCredit 호출]
     II --> JJ
 
-    V --> W[다른 챌린저로부터<br/>Attention 질문 수신]
+    V --> W[다른 챌린저로부터 Attention 질문 수신]
     W --> X[Attention 질문 처리]
-    X --> Y[Attention 응답 전송<br/>다른 챌린저에게]
+    X --> Y[Attention 응답 전송 - 다른 챌린저에게]
     Y --> V
 
-    V --> AA[정기적 L2 등록<br/>평판 데이터 백업]
-    AA --> BB[L2 체인에 평판 기록<br/>챌린저 주소 + 평판점수]
-    BB --> CC[등록자 보상 지급<br/>추후 이코노미용]
+    V --> AA[정기적 L2 등록 - 평판 데이터 백업]
+    AA --> BB[L2 체인에 평판 기록 - 챌린저 주소 + 평판점수]
+    BB --> CC[등록자 보상 지급 - 추후 이코노미용]
     CC --> V
 
     V --> Z[다음 Dispute Game 대기]
