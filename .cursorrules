@@ -1,0 +1,82 @@
+# Optimism 시퀀서 시스템 개선 방안 개발 - Task Master AI 규칙
+
+## 프로젝트 개요
+이 프로젝트는 Optimism의 시퀀서 시스템을 개선하기 위한 3단계 개발 계획을 포함합니다.
+
+## 주요 개발 영역
+
+### Phase 1: 기반 시스템 구축 (1-2개월)
+1. **백업 완료 거래 풀 시스템** (`sequencer-docs/tasks/phase1/backup-tx-pool/`)
+   - 다중 시퀀서 환경에서 거래 순서 일관성 보장
+   - 실시간 거래 동기화 (지연 시간 < 1초)
+   - 장애 감지 및 자동 전환 (전환 시간 < 5초)
+
+2. **기본 P2P 챌린저 네트워크** (`sequencer-docs/tasks/phase1/p2p-challenger-basic/`)
+   - 분산화된 챌린저 네트워크 구축
+   - 중앙 권한 없이 챌린저들이 상호 관리
+   - 온체인 검증 우선 원칙
+
+### Phase 2: 통합 및 최적화 (2-3개월)
+3. **백업 시퀀서 + 챌린저 통합** (`sequencer-docs/tasks/phase2/backup-challenger-integration/`)
+   - 백업 시퀀서의 유휴 리소스를 챌린저로 활용
+   - 이중 보안 계층으로 안정성 증대
+
+4. **고급 P2P 기능** (`sequencer-docs/tasks/phase2/p2p-challenger-advanced/`)
+   - 평판 시스템, 자동 관리
+   - 실시간 모니터링 및 평판 관리
+
+### Phase 3: 고도화 (3-4개월)
+5. **다중 시퀀서 환경 완성** (`sequencer-docs/tasks/phase3/multi-sequencer-env/`)
+   - 완전한 장애 대응 시스템
+   - 백업 완료 거래 풀 기반 시스템
+
+6. **성능 최적화 및 모니터링** (`sequencer-docs/tasks/phase3/optimization-monitoring/`)
+   - 운영 안정성 확보
+   - 성능 모니터링 시스템
+
+## 개발 우선순위
+1. 백업 완료 거래 풀 시스템 (가장 안정적이고 즉시 효과)
+2. 기본 P2P 챌린저 네트워크 (분산화의 기반)
+3. 백업 시퀀서 + 챌린저 통합 (리소스 효율성)
+4. 고급 P2P 기능 (평판 시스템, 자동 관리)
+5. 다중 시퀀서 환경 완성 (완전한 장애 대응)
+6. 성능 최적화 및 모니터링 (운영 안정성)
+
+## 기술 스택
+- **언어**: Go 1.21+
+- **프레임워크**: Optimism 스택 (op-node, op-challenger, op-conductor)
+- **데이터베이스**: LevelDB (기존 Optimism 스택)
+- **네트워킹**: P2P 프로토콜, gRPC
+- **모니터링**: Prometheus, Grafana
+- **테스팅**: Go testing, E2E 테스트
+
+## 코드 구조
+- `op-node/rollup/sequencing/backup_pool/` - 백업 거래 풀 구현
+- `op-node/rollup/sequencing/backup_sequencer/` - 백업 시퀀서 구현
+- `op-node/rollup/sequencing/integration/` - Conductor 통합
+- `op-challenger/p2p/` - P2P 챌린저 네트워크
+- `op-conductor/backup/` - 백업 시퀀서 관리
+
+## 성능 목표
+- 동기화 지연: < 1초
+- 전환 시간: < 5초
+- 메모리 사용량: < 1GB (10,000 거래 기준)
+- CPU 사용률: < 10% (정상 상태)
+
+## 테스트 전략
+- 단위 테스트: 각 컴포넌트별 기능 테스트
+- 통합 테스트: 전체 시스템 동작 테스트
+- E2E 테스트: 실제 네트워크 환경 테스트
+- 성능 테스트: 부하 테스트 및 벤치마크
+
+## 문서화
+- 각 Phase별 상세 구현 가이드
+- API 문서 및 인터페이스 설명
+- 운영 가이드 및 트러블슈팅
+- 아키텍처 다이어그램 및 설계 문서
+
+## Task Master AI 활용 지침
+- 각 Phase의 작업을 독립적인 Task로 관리
+- 코드 리뷰 및 품질 관리 자동화
+- 테스트 커버리지 및 성능 지표 모니터링
+- 문서 업데이트 및 동기화 자동화
