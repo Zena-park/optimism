@@ -1,9 +1,9 @@
 package attention
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -26,6 +26,8 @@ type TriggerConfig struct {
 	ConsensusTimeout time.Duration
 	// Block time in seconds (12 seconds for Optimism)
 	BlockTime time.Duration
+	// L2 batch submission contract address
+	BatchSubmissionAddress common.Address
 	// Logger for the trigger
 	Logger log.Logger
 }
@@ -49,17 +51,21 @@ type AttentionTrigger struct {
 	peers        map[string]bool // active peers
 	mu           sync.RWMutex
 	logger       log.Logger
+	// RAT system monitoring
+	monitoring bool
+	monitorCtx context.Context
 }
 
 // NewAttentionTrigger creates a new attention trigger instance
 func NewAttentionTrigger(config *TriggerConfig, challengerID string) *AttentionTrigger {
 	if config == nil {
 		config = &TriggerConfig{
-			TriggerRatio:          DefaultTriggerRatio,
-			MinConsensusThreshold: 51, // 51% consensus required
-			ConsensusTimeout:      30 * time.Second,
-			BlockTime:             12 * time.Second,
-			Logger:                log.New(),
+			TriggerRatio:           DefaultTriggerRatio,
+			MinConsensusThreshold:  51, // 51% consensus required
+			ConsensusTimeout:       30 * time.Second,
+			BlockTime:              12 * time.Second,
+			BatchSubmissionAddress: common.Address{},
+			Logger:                 log.New(),
 		}
 	}
 
@@ -68,6 +74,8 @@ func NewAttentionTrigger(config *TriggerConfig, challengerID string) *AttentionT
 		challengerID: challengerID,
 		peers:        make(map[string]bool),
 		logger:       config.Logger,
+		monitoring:   false,
+		monitorCtx:   nil,
 	}
 }
 
@@ -140,7 +148,7 @@ func (at *AttentionTrigger) SelectRandomChallenger(blockHash common.Hash, stateR
 	seed := at.createDeterministicSeed(blockHash, stateRoot, blockNumber, batchIndex)
 
 	// Select challenger based on seed
-	index := int(seed.Uint64() % uint64(len(activePeers)))
+	index := int(seed % uint64(len(activePeers)))
 	return activePeers[index]
 }
 
@@ -172,7 +180,7 @@ func (at *AttentionTrigger) GetAvailableChallengerCount() int {
 
 // createDeterministicSeed creates a deterministic seed from block hash, state root, challenger ID, block number, and batch index
 // Each challenger gets a different seed for the same block and batch, ensuring independent selection
-func (at *AttentionTrigger) createDeterministicSeed(blockHash common.Hash, stateRoot common.Hash, blockNumber uint64, batchIndex uint64) *big.Int {
+func (at *AttentionTrigger) createDeterministicSeed(blockHash common.Hash, stateRoot common.Hash, blockNumber uint64, batchIndex uint64) uint64 {
 	// Combine block hash + state root + challenger ID + block number + batch index
 	// This ensures each challenger has different selection for the same block and batch
 	data := fmt.Sprintf("%s%s%s%d%d", blockHash.Hex(), stateRoot.Hex(), at.challengerID, blockNumber, batchIndex)
@@ -180,8 +188,12 @@ func (at *AttentionTrigger) createDeterministicSeed(blockHash common.Hash, state
 	// Create SHA256 hash
 	hash := sha256.Sum256([]byte(data))
 
-	// Convert to big.Int
-	return new(big.Int).SetBytes(hash[:])
+	// Convert first 8 bytes to uint64
+	var seed uint64
+	for i := 0; i < 8; i++ {
+		seed = seed<<8 + uint64(hash[i])
+	}
+	return seed
 }
 
 // GetConfig returns the current configuration
@@ -200,4 +212,58 @@ func (at *AttentionTrigger) SetConfig(config *TriggerConfig) {
 // GetChallengerID returns the challenger ID
 func (at *AttentionTrigger) GetChallengerID() string {
 	return at.challengerID
+}
+
+// StartRATMonitoring starts the RAT system using existing challenger's L1 monitoring
+// This function integrates with the existing gameMonitor.onNewL1Head() system
+func (at *AttentionTrigger) StartRATMonitoring(ctx context.Context, l1RPCEndpoint string) error {
+	at.logger.Info("Starting RAT system with existing L1 monitoring", "endpoint", l1RPCEndpoint)
+
+	// RAT system will be triggered from existing gameMonitor.onNewL1Head()
+	// No need for separate L2 batch monitoring - reuse existing infrastructure
+	at.monitoring = true
+	at.monitorCtx = ctx
+
+	at.logger.Info("RAT system integrated with existing L1 head monitoring")
+	return nil
+}
+
+// StopRATMonitoring stops the RAT system
+func (at *AttentionTrigger) StopRATMonitoring() {
+	if !at.monitoring {
+		return
+	}
+
+	at.monitoring = false
+	at.logger.Info("Stopped RAT system")
+}
+
+// ProcessL1Block is called from existing gameMonitor.onNewL1Head()
+// This integrates RAT triggering with existing L1 monitoring
+func (at *AttentionTrigger) ProcessL1Block(blockHash common.Hash, stateRoot common.Hash, blockNumber uint64) {
+	if !at.monitoring {
+		return
+	}
+
+	// Use block number as batch index for trigger calculation
+	// This is a simplified approach - in real implementation,
+	// we would extract actual batch information from the block
+	batchIndex := blockNumber
+
+	// Check if attention test should be triggered
+	if at.ShouldTriggerAttentionTest(blockHash, stateRoot, blockNumber, batchIndex) {
+		// Select target challenger
+		targetChallenger := at.SelectRandomChallenger(blockHash, stateRoot, blockNumber, batchIndex)
+
+		if targetChallenger != "" {
+			at.logger.Info("Triggering attention test from L1 block",
+				"batchIndex", batchIndex,
+				"targetChallenger", targetChallenger,
+				"blockNumber", blockNumber,
+				"blockHash", blockHash.Hex())
+
+			// TODO: Broadcast attention test to P2P network
+			// This will be implemented in TODO 1.4: P2P 네트워크 통합
+		}
+	}
 }
