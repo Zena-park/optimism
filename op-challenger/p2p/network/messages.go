@@ -1,0 +1,232 @@
+package network
+
+import (
+	"encoding/json"
+	"time"
+)
+
+// MessageType represents the type of P2P message
+type MessageType int
+
+const (
+	MessageTypePing MessageType = iota
+	MessageTypePong
+	MessageTypeFindNode
+	MessageTypeFindNodeResponse
+	MessageTypeAnnounce
+	MessageTypeGameState
+	MessageTypeValidationResult
+	MessageTypeReputationUpdate
+	// RAT (Randomized Attention Test) 관련 메시지
+	MessageTypeAttentionTestTriggered
+	MessageTypeAttentionTestResponse
+	MessageTypeAttentionTestResult
+	MessageTypeChallengerRegistration
+	MessageTypeChallengerStatus
+	MessageTypeChallengerChallenge
+	MessageTypeStateCommitment
+	MessageTypeStateSyncRequest
+	MessageTypeStateSyncResponse
+)
+
+// Message represents a P2P network message
+type Message struct {
+	Type      MessageType `json:"type"`
+	From      string      `json:"from"`
+	To        string      `json:"to,omitempty"` // Empty for broadcast
+	Payload   []byte      `json:"payload"`
+	Timestamp time.Time   `json:"timestamp"`
+	Signature []byte      `json:"signature"`
+	Nonce     uint64      `json:"nonce"` // Prevent replay attacks
+}
+
+// FindNodeRequest represents a FIND_NODE RPC request
+type FindNodeRequest struct {
+	TargetID string `json:"target_id"`
+}
+
+// FindNodeResponse represents a FIND_NODE RPC response
+type FindNodeResponse struct {
+	Nodes []*NodeInfo `json:"nodes"`
+}
+
+// AnnounceRequest represents an ANNOUNCE RPC request
+type AnnounceRequest struct {
+	NodeInfo *NodeInfo `json:"node_info"`
+}
+
+// AnnounceResponse represents an ANNOUNCE RPC response
+type AnnounceResponse struct {
+	Success bool   `json:"success"`
+	Reason  string `json:"reason,omitempty"`
+}
+
+// HandshakeRequest represents a connection handshake request
+type HandshakeRequest struct {
+	NodeID    string `json:"node_id"`
+	PublicKey []byte `json:"public_key"` // Serialized public key
+	Version   string `json:"version"`
+}
+
+// HandshakeResponse represents a connection handshake response
+type HandshakeResponse struct {
+	Accepted  bool   `json:"accepted"`
+	Reason    string `json:"reason,omitempty"`
+	PublicKey []byte `json:"public_key"` // Serialized public key
+	Version   string `json:"version"`
+}
+
+// GameStateMessage represents a game state update message
+type GameStateMessage struct {
+	GameHash  string    `json:"game_hash"`
+	GameInfo  *GameInfo `json:"game_info"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// ValidationResultMessage represents a validation result message
+type ValidationResultMessage struct {
+	GameHash   string    `json:"game_hash"`
+	Success    bool      `json:"success"`
+	Action     string    `json:"action"`
+	Confidence float64   `json:"confidence"`
+	Timestamp  time.Time `json:"timestamp"`
+}
+
+// ReputationUpdateMessage represents a reputation update message
+type ReputationUpdateMessage struct {
+	PeerID    string    `json:"peer_id"`
+	OldScore  float64   `json:"old_score"`
+	NewScore  float64   `json:"new_score"`
+	Reason    string    `json:"reason"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// RAT (Randomized Attention Test) 관련 메시지 구조체들
+
+// AttentionTestTriggeredMessage represents an attention test trigger notification
+type AttentionTestTriggeredMessage struct {
+	TestID           string    `json:"test_id"`
+	StateRoot        string    `json:"state_root"`
+	L2BlockNumber    uint64    `json:"l2_block_number"`
+	TargetChallenger string    `json:"target_challenger"`
+	ResponseWindow   uint64    `json:"response_window"` // seconds
+	Timestamp        time.Time `json:"timestamp"`
+}
+
+// AttentionTestResponseMessage represents a challenger's response to attention test
+type AttentionTestResponseMessage struct {
+	TestID     string    `json:"test_id"`
+	Challenger string    `json:"challenger"`
+	LeftChild  string    `json:"left_child"`  // 왼쪽 자식 해시
+	RightChild string    `json:"right_child"` // 오른쪽 자식 해시
+	Timestamp  time.Time `json:"timestamp"`
+}
+
+// AttentionTestResultMessage represents the result of an attention test
+type AttentionTestResultMessage struct {
+	TestID         string    `json:"test_id"`
+	Challenger     string    `json:"challenger"`
+	Passed         bool      `json:"passed"`
+	Reason         string    `json:"reason,omitempty"`
+	PenaltyApplied bool      `json:"penalty_applied"`
+	Timestamp      time.Time `json:"timestamp"`
+}
+
+// ChallengerRegistrationMessage represents challenger registration announcement
+type ChallengerRegistrationMessage struct {
+	ChallengerID string    `json:"challenger_id"`
+	Address      string    `json:"address"`
+	Deposit      uint64    `json:"deposit"`
+	PublicKey    []byte    `json:"public_key"`
+	Timestamp    time.Time `json:"timestamp"`
+}
+
+// ChallengerStatusMessage represents challenger online/offline status
+type ChallengerStatusMessage struct {
+	ChallengerID string    `json:"challenger_id"`
+	Status       string    `json:"status"` // "online", "offline", "active", "inactive"
+	LastSeen     time.Time `json:"last_seen"`
+	Timestamp    time.Time `json:"timestamp"`
+}
+
+// ChallengerChallengeMessage represents a challenge to a challenger
+type ChallengerChallengeMessage struct {
+	ChallengeID      string    `json:"challenge_id"`
+	TargetChallenger string    `json:"target_challenger"`
+	ChallengeType    string    `json:"challenge_type"` // "attention_test", "fraud_proof", etc.
+	StateRoot        string    `json:"state_root,omitempty"`
+	L2BlockNumber    uint64    `json:"l2_block_number,omitempty"`
+	ResponseWindow   uint64    `json:"response_window"` // seconds
+	Timestamp        time.Time `json:"timestamp"`
+}
+
+// StateCommitmentMessage represents L2 state commitment sharing
+type StateCommitmentMessage struct {
+	StateRoot     string    `json:"state_root"`
+	L2BlockNumber uint64    `json:"l2_block_number"`
+	Proposer      string    `json:"proposer"`
+	TxCount       uint64    `json:"tx_count"`
+	GasUsed       uint64    `json:"gas_used"`
+	Timestamp     time.Time `json:"timestamp"`
+}
+
+// StateSyncRequestMessage represents a request for state synchronization
+type StateSyncRequestMessage struct {
+	RequestID       string    `json:"request_id"`
+	FromBlockNumber uint64    `json:"from_block_number"`
+	ToBlockNumber   uint64    `json:"to_block_number"`
+	StateRoot       string    `json:"state_root,omitempty"`
+	Timestamp       time.Time `json:"timestamp"`
+}
+
+// StateSyncResponseMessage represents a response to state sync request
+type StateSyncResponseMessage struct {
+	RequestID     string                   `json:"request_id"`
+	StateData     []StateCommitmentMessage `json:"state_data"`
+	Complete      bool                     `json:"complete"`
+	NextRequestID string                   `json:"next_request_id,omitempty"`
+	Timestamp     time.Time                `json:"timestamp"`
+}
+
+// Serialize serializes a message to JSON
+func (m *Message) Serialize() ([]byte, error) {
+	return json.Marshal(m)
+}
+
+// DeserializeMessage deserializes a JSON message
+func DeserializeMessage(data []byte) (*Message, error) {
+	var msg Message
+	if err := json.Unmarshal(data, &msg); err != nil {
+		return nil, err
+	}
+	return &msg, nil
+}
+
+// IsBroadcast returns true if the message is a broadcast message
+func (m *Message) IsBroadcast() bool {
+	return m.To == ""
+}
+
+// IsValid checks if the message is valid
+func (m *Message) IsValid() bool {
+	if m.From == "" {
+		return false
+	}
+	if m.Timestamp.IsZero() {
+		return false
+	}
+	if m.Nonce == 0 {
+		return false
+	}
+	return true
+}
+
+// GetAge returns the age of the message
+func (m *Message) GetAge() time.Duration {
+	return time.Since(m.Timestamp)
+}
+
+// IsExpired checks if the message is expired (older than maxAge)
+func (m *Message) IsExpired(maxAge time.Duration) bool {
+	return m.GetAge() > maxAge
+}
