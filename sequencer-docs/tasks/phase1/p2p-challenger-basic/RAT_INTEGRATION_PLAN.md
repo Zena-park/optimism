@@ -59,7 +59,7 @@
        - CollectTriggerConsensus() // 트리거 합의 수집 (51% 이상 동의 필요)
        - UpdatePeerList() // 챌린저 목록 관리 (추가/제거)
        - GetAvailableChallengerCount() // 사용 가능한 챌린저 수 조회
-       - MonitorL2BatchEvents() // L2 배치 이벤트 모니터링 (자동 트리거) - 구현 예정
+       - MonitorL2BatchEvents() // L2 배치 이벤트 모니터링 (자동 트리거) - 구현 완료
        ```
 
 ### **2. Hybrid Reputation Store** (`p2p/reputation/hybrid_store.go`)
