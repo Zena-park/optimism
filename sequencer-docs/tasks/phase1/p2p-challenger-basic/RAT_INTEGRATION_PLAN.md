@@ -224,7 +224,7 @@ flowchart TD
 
 ## 🚀 구현 순서
 
-### **Phase 1: 핵심 기능 구현 (1-2개월)**
+### **Phase 1: 핵심 기능**
 1. **Distributed Attention Question System** (완전 분산화된 어텐션 질문 시스템)
    - TODO 1.1: 기본 구조 설계
    - TODO 1.2: P2P 챌린저 네트워크 구축
@@ -240,7 +240,7 @@ flowchart TD
    - TODO 2.3: 결과 분류
    - TODO 2.4: 단위 테스트
 
-### **Phase 2: 고급 기능 구현 (2-3개월)**
+### **Phase 2: 고급 기능 구현**
 3. **배치 검증 성능 최적화** (병렬 검증 및 캐싱 전략)
    - TODO 4.1: 병렬 검증
    - TODO 4.2: 캐싱 전략

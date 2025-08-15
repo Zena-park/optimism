@@ -31,7 +31,7 @@
 - 기존 상태 루트 검증과 함께 이중 검증 구조 구현
 - 단순한 데이터 비교로 배치 오류를 즉시 감지
 
-## 🎯 Phase 1: 핵심 기능 구현 (1-2개월)
+## 🎯 Phase 1: 핵심 기능 구현
 
 ### **1. Distributed Attention Question System** (`p2p/attention/question.go`)
 
@@ -158,7 +158,7 @@
 - [ ] 검증 프로세스 테스트
 - [ ] 결과 분류 테스트
 
-## 🎯 Phase 2: 고급 기능 구현 (2-3개월)
+## 🎯 Phase 2: 고급 기능 구현
 
 ### **4. 배치 검증 성능 최적화** (`op-challenger/batch/optimization.go`)
 
