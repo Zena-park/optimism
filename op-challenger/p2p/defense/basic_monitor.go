@@ -81,6 +81,10 @@ type AlertThresholds struct {
 
 // NewBasicMonitor creates a new basic traffic monitor
 func NewBasicMonitor(config *types.BasicMonitorConfig, logger log.Logger) *BasicMonitor {
+	if config == nil {
+		config = types.DefaultBasicMonitorConfig()
+	}
+
 	stats := &TrafficStats{
 		MessagesByType:  make(map[string]int64),
 		ConnectionsByIP: make(map[string]int),

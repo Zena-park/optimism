@@ -42,6 +42,10 @@ type ConnectionInfo struct {
 
 // NewConnectionLimiter creates a new connection limiter
 func NewConnectionLimiter(config *types.ConnectionLimiterConfig, logger log.Logger) *ConnectionLimiter {
+	if config == nil {
+		config = types.DefaultConnectionLimiterConfig()
+	}
+
 	return &ConnectionLimiter{
 		config:        config,
 		logger:        logger,

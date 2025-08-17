@@ -39,6 +39,10 @@ type TokenBucket struct {
 
 // NewRateLimiter creates a new rate limiter
 func NewRateLimiter(config *types.RateLimiterConfig, logger log.Logger) *RateLimiter {
+	if config == nil {
+		config = types.DefaultRateLimiterConfig()
+	}
+
 	return &RateLimiter{
 		config:      config,
 		logger:      logger,
