@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-challenger/game/registry"
 	"github.com/ethereum-optimism/optimism/op-challenger/game/scheduler"
 	"github.com/ethereum-optimism/optimism/op-challenger/metrics"
+	"github.com/ethereum-optimism/optimism/op-challenger/p2p/attention"
 	"github.com/ethereum-optimism/optimism/op-challenger/version"
 	"github.com/ethereum-optimism/optimism/op-service/client"
 	"github.com/ethereum-optimism/optimism/op-service/clock"
@@ -63,6 +64,12 @@ type Service struct {
 
 	balanceMetricer io.Closer
 
+	// RAT (Randomized Attention Test) system
+	attentionTrigger *attention.AttentionTrigger
+
+	// Configuration
+	config *config.Config
+
 	stopped atomic.Bool
 }
 
@@ -84,6 +91,8 @@ func NewService(ctx context.Context, logger log.Logger, cfg *config.Config, m me
 }
 
 func (s *Service) initFromConfig(ctx context.Context, cfg *config.Config) error {
+	s.config = cfg // Store config for later use
+
 	if err := s.initTxManager(ctx, cfg); err != nil {
 		return fmt.Errorf("failed to init tx manager: %w", err)
 	}
@@ -235,6 +244,29 @@ func (s *Service) initLargePreimages() error {
 
 func (s *Service) initMonitor(cfg *config.Config) {
 	s.monitor = newGameMonitor(s.logger, s.l1Clock, s.factoryContract, s.sched, s.preimages, cfg.GameWindow, s.claimer, cfg.GameAllowlist, s.pollClient)
+
+	// Initialize RAT (Randomized Attention Test) system
+	s.initRATSystem(cfg)
+}
+
+func (s *Service) initRATSystem(cfg *config.Config) {
+	// Create attention trigger with default configuration
+	triggerConfig := attention.TriggerConfig{
+		TriggerRatio:           0.1,                                                               // 10% of batches trigger attention test
+		BatchSubmissionAddress: common.HexToAddress("0x5E79E8E8f0c2767c71561efA7E3aC1d8549f9aC5"), // TODO: Get from config
+		Logger:                 s.logger,
+	}
+
+	// Create challenger ID from sender address
+	challengerID := s.txSender.From().Hex()
+
+	// Initialize attention trigger
+	s.attentionTrigger = attention.NewAttentionTrigger(&triggerConfig, challengerID)
+
+	s.logger.Info("RAT system initialized",
+		"challengerID", challengerID,
+		"triggerRatio", triggerConfig.TriggerRatio,
+		"batchSubmissionAddress", triggerConfig.BatchSubmissionAddress)
 }
 
 func (s *Service) Start(ctx context.Context) error {
@@ -244,6 +276,17 @@ func (s *Service) Start(ctx context.Context) error {
 	s.preimages.Start(ctx)
 	s.logger.Info("starting monitoring")
 	s.monitor.StartMonitoring()
+
+	// Start RAT (Randomized Attention Test) monitoring
+	if s.attentionTrigger != nil {
+		s.logger.Info("starting RAT monitoring")
+		if err := s.attentionTrigger.StartRATMonitoring(ctx, s.config.L1EthRpc); err != nil {
+			s.logger.Error("failed to start RAT monitoring", "error", err)
+			return fmt.Errorf("failed to start RAT monitoring: %w", err)
+		}
+		s.logger.Info("RAT monitoring started successfully")
+	}
+
 	s.logger.Info("challenger game service start completed")
 	return nil
 }

@@ -22,6 +22,10 @@ func GenerateKeyPair() (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
 
 // PublicKeyToID converts a public key to a challenger ID
 func PublicKeyToID(publicKey *ecdsa.PublicKey) string {
+	if publicKey == nil {
+		return ""
+	}
+
 	// 공개키를 바이트로 변환
 	pubKeyBytes := elliptic.Marshal(publicKey.Curve, publicKey.X, publicKey.Y)
 
@@ -34,6 +38,10 @@ func PublicKeyToID(publicKey *ecdsa.PublicKey) string {
 
 // SignMessage signs a message with a private key
 func SignMessage(privateKey *ecdsa.PrivateKey, message []byte) ([]byte, error) {
+	if privateKey == nil {
+		return nil, fmt.Errorf("private key cannot be nil")
+	}
+
 	// 메시지 해시
 	hash := sha256.Sum256(message)
 
@@ -50,6 +58,10 @@ func SignMessage(privateKey *ecdsa.PrivateKey, message []byte) ([]byte, error) {
 
 // VerifySignature verifies a signature against a message and public key
 func VerifySignature(publicKey *ecdsa.PublicKey, message []byte, signature []byte) bool {
+	if publicKey == nil {
+		return false
+	}
+
 	// 메시지 해시
 	hash := sha256.Sum256(message)
 
