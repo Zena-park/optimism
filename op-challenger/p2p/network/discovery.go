@@ -1,9 +1,12 @@
 package network
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-challenger/p2p/types"
+	"github.com/ethereum-optimism/optimism/op-challenger/p2p/utils"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -14,6 +17,10 @@ type DiscoveryService struct {
 	bootstrap  []string             // Bootstrap nodes
 	knownNodes map[string]*NodeInfo // Known nodes
 	mu         sync.RWMutex
+
+	// Challenger-specific discovery (Phase 1 extension)
+	challengerNodes map[string]*types.ChallengerInfo // Known challenger nodes
+	challengerMu    sync.RWMutex                     // Separate mutex for challenger data
 
 	// Configuration
 	config DiscoveryConfig
@@ -37,10 +44,11 @@ func NewDiscoveryService(config DiscoveryConfig, logger log.Logger) *DiscoverySe
 			k:       config.K,
 			alpha:   config.Alpha,
 		},
-		bootstrap:  config.Bootstrap,
-		knownNodes: make(map[string]*NodeInfo),
-		config:     config,
-		logger:     logger,
+		bootstrap:       config.Bootstrap,
+		knownNodes:      make(map[string]*NodeInfo),
+		challengerNodes: make(map[string]*types.ChallengerInfo), // Phase 1: challenger discovery
+		config:          config,
+		logger:          logger,
 	}
 }
 
@@ -288,4 +296,197 @@ func (d *DHT) AddNode(nodeInfo *NodeInfo) error {
 func (d *DHT) RemoveNode(nodeID string) error {
 	// TODO: Implement DHT node removal
 	return nil
+}
+
+// Phase 1 Challenger Discovery Methods
+
+// AddChallengerNode adds a challenger node to the discovery service
+func (ds *DiscoveryService) AddChallengerNode(challengerInfo *types.ChallengerInfo) error {
+	ds.challengerMu.Lock()
+	defer ds.challengerMu.Unlock()
+
+	if challengerInfo == nil {
+		return fmt.Errorf("challenger info cannot be nil")
+	}
+
+	// Validate challenger info
+	if err := utils.ValidateChallengerID(challengerInfo.ID); err != nil {
+		return fmt.Errorf("invalid challenger ID: %w", err)
+	}
+
+	if err := utils.ValidateNetworkAddress(challengerInfo.Address); err != nil {
+		return fmt.Errorf("invalid challenger address: %w", err)
+	}
+
+	// Add to known challenger nodes
+	ds.challengerNodes[challengerInfo.ID] = challengerInfo
+
+	ds.logger.Debug("Challenger node added to discovery",
+		"challenger_id", challengerInfo.ID, "address", challengerInfo.Address)
+	return nil
+}
+
+// RemoveChallengerNode removes a challenger node from the discovery service
+func (ds *DiscoveryService) RemoveChallengerNode(challengerID string) {
+	ds.challengerMu.Lock()
+	defer ds.challengerMu.Unlock()
+
+	delete(ds.challengerNodes, challengerID)
+	ds.logger.Debug("Challenger node removed from discovery", "challenger_id", challengerID)
+}
+
+// GetChallengerNode returns information about a specific challenger node
+func (ds *DiscoveryService) GetChallengerNode(challengerID string) *types.ChallengerInfo {
+	ds.challengerMu.RLock()
+	defer ds.challengerMu.RUnlock()
+
+	info, exists := ds.challengerNodes[challengerID]
+	if !exists {
+		return nil
+	}
+
+	// Return a copy to prevent external modification
+	infoCopy := *info
+	return &infoCopy
+}
+
+// GetAllChallengerNodes returns all known challenger nodes
+func (ds *DiscoveryService) GetAllChallengerNodes() map[string]*types.ChallengerInfo {
+	ds.challengerMu.RLock()
+	defer ds.challengerMu.RUnlock()
+
+	// Return a copy to prevent external modification
+	nodes := make(map[string]*types.ChallengerInfo)
+	for id, info := range ds.challengerNodes {
+		infoCopy := *info
+		nodes[id] = &infoCopy
+	}
+
+	return nodes
+}
+
+// FindChallengerNodes finds challenger nodes matching the specified criteria
+func (ds *DiscoveryService) FindChallengerNodes(role types.ChallengerRole, maxResults int) []*types.ChallengerInfo {
+	ds.challengerMu.RLock()
+	defer ds.challengerMu.RUnlock()
+
+	var results []*types.ChallengerInfo
+	count := 0
+
+	for _, info := range ds.challengerNodes {
+		// Check if the challenger has the required role
+		if role != 0 && !info.HasRole(role) {
+			continue
+		}
+
+		// Check if challenger is online
+		if !info.IsOnline() {
+			continue
+		}
+
+		// Add to results
+		infoCopy := *info
+		results = append(results, &infoCopy)
+		count++
+
+		// Stop if we've reached max results
+		if maxResults > 0 && count >= maxResults {
+			break
+		}
+	}
+
+	ds.logger.Debug("Found challenger nodes",
+		"role", role, "max_results", maxResults, "found", len(results))
+	return results
+}
+
+// FindClosestChallengerNodes finds the closest challenger nodes to a target ID
+func (ds *DiscoveryService) FindClosestChallengerNodes(targetID string, maxResults int) []*types.ChallengerInfo {
+	ds.challengerMu.RLock()
+	defer ds.challengerMu.RUnlock()
+
+	// For Phase 1, we'll use a simple approach
+	// In Phase 2-3, this could be enhanced with proper distance calculation
+	var results []*types.ChallengerInfo
+	count := 0
+
+	for _, info := range ds.challengerNodes {
+		// Check if challenger is online
+		if !info.IsOnline() {
+			continue
+		}
+
+		// Add to results
+		infoCopy := *info
+		results = append(results, &infoCopy)
+		count++
+
+		// Stop if we've reached max results
+		if maxResults > 0 && count >= maxResults {
+			break
+		}
+	}
+
+	ds.logger.Debug("Found closest challenger nodes",
+		"target_id", targetID, "max_results", maxResults, "found", len(results))
+	return results
+}
+
+// UpdateChallengerNodeStatus updates the status of a challenger node
+func (ds *DiscoveryService) UpdateChallengerNodeStatus(challengerID string, status types.ChallengerStatus) error {
+	ds.challengerMu.Lock()
+	defer ds.challengerMu.Unlock()
+
+	info, exists := ds.challengerNodes[challengerID]
+	if !exists {
+		return fmt.Errorf("challenger node not found: %s", challengerID)
+	}
+
+	info.UpdateStatus(status)
+	ds.logger.Debug("Challenger node status updated",
+		"challenger_id", challengerID, "status", status.String())
+	return nil
+}
+
+// CleanupStaleChallengerNodes removes stale challenger nodes
+func (ds *DiscoveryService) CleanupStaleChallengerNodes(staleDuration time.Duration) int {
+	ds.challengerMu.Lock()
+	defer ds.challengerMu.Unlock()
+
+	removed := 0
+	for id, info := range ds.challengerNodes {
+		if info.IsStale(staleDuration) {
+			delete(ds.challengerNodes, id)
+			removed++
+			ds.logger.Debug("Stale challenger node removed", "challenger_id", id)
+		}
+	}
+
+	if removed > 0 {
+		ds.logger.Info("Stale challenger nodes cleaned up", "removed_count", removed)
+	}
+
+	return removed
+}
+
+// GetChallengerNodeCount returns the number of known challenger nodes
+func (ds *DiscoveryService) GetChallengerNodeCount() int {
+	ds.challengerMu.RLock()
+	defer ds.challengerMu.RUnlock()
+	return len(ds.challengerNodes)
+}
+
+// GetOnlineChallengerNodeCount returns the number of online challenger nodes
+func (ds *DiscoveryService) GetOnlineChallengerNodeCount() int {
+	ds.challengerMu.RLock()
+	defer ds.challengerMu.RUnlock()
+
+	count := 0
+	for _, info := range ds.challengerNodes {
+		if info.IsOnline() {
+			count++
+		}
+	}
+
+	return count
 }

@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum-optimism/optimism/op-challenger/p2p/types"
+	"github.com/ethereum-optimism/optimism/op-challenger/p2p/utils"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -44,6 +46,11 @@ type P2PNode struct {
 	lastSeen   time.Time  // Last activity time
 	reputation float64    // Reputation score
 
+	// Challenger-specific information (Phase 1 extension)
+	challengerInfo  *types.ChallengerInfo            // Challenger metadata
+	isChallenger    bool                             // Whether this node is a challenger
+	challengerPeers map[string]*types.ChallengerInfo // Known challenger peers
+
 	// Concurrency control
 	mu     sync.RWMutex       // Read/write mutex
 	ctx    context.Context    // Context
@@ -51,6 +58,250 @@ type P2PNode struct {
 
 	// Logging
 	logger log.Logger
+}
+
+// EnableChallenger enables challenger functionality for this node
+func (n *P2PNode) EnableChallenger(challengerID string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if n.isChallenger {
+		return fmt.Errorf("node is already a challenger")
+	}
+
+	// Validate challenger ID
+	if err := utils.ValidateChallengerID(challengerID); err != nil {
+		return fmt.Errorf("invalid challenger ID: %w", err)
+	}
+
+	// Create challenger info
+	n.challengerInfo = types.NewChallengerInfo(challengerID, n.id, n.address, n.publicKey)
+	n.isChallenger = true
+	n.challengerPeers = make(map[string]*types.ChallengerInfo)
+
+	n.logger.Info("Challenger functionality enabled", "challenger_id", challengerID)
+	return nil
+}
+
+// DisableChallenger disables challenger functionality for this node
+func (n *P2PNode) DisableChallenger() {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger {
+		return
+	}
+
+	n.challengerInfo = nil
+	n.isChallenger = false
+	n.challengerPeers = nil
+
+	n.logger.Info("Challenger functionality disabled")
+}
+
+// IsChallenger returns whether this node is a challenger
+func (n *P2PNode) IsChallenger() bool {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+	return n.isChallenger
+}
+
+// GetChallengerInfo returns the challenger information
+func (n *P2PNode) GetChallengerInfo() *types.ChallengerInfo {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	if !n.isChallenger || n.challengerInfo == nil {
+		return nil
+	}
+
+	// Return a copy to prevent external modification
+	info := *n.challengerInfo
+	return &info
+}
+
+// UpdateChallengerStatus updates the challenger status
+func (n *P2PNode) UpdateChallengerStatus(status types.ChallengerStatus) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger || n.challengerInfo == nil {
+		return fmt.Errorf("node is not a challenger")
+	}
+
+	n.challengerInfo.UpdateStatus(status)
+	n.lastSeen = time.Now()
+
+	n.logger.Debug("Challenger status updated", "status", status.String())
+	return nil
+}
+
+// SetChallengerConnected marks the challenger as connected
+func (n *P2PNode) SetChallengerConnected() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger || n.challengerInfo == nil {
+		return fmt.Errorf("node is not a challenger")
+	}
+
+	n.challengerInfo.SetConnected()
+	n.lastSeen = time.Now()
+
+	n.logger.Debug("Challenger marked as connected")
+	return nil
+}
+
+// SetChallengerDisconnected marks the challenger as disconnected
+func (n *P2PNode) SetChallengerDisconnected() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger || n.challengerInfo == nil {
+		return fmt.Errorf("node is not a challenger")
+	}
+
+	n.challengerInfo.SetDisconnected()
+	n.lastSeen = time.Now()
+
+	n.logger.Debug("Challenger marked as disconnected")
+	return nil
+}
+
+// UpdateChallengerNetworkInfo updates challenger network information
+func (n *P2PNode) UpdateChallengerNetworkInfo(peerCount int, latency time.Duration) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger || n.challengerInfo == nil {
+		return fmt.Errorf("node is not a challenger")
+	}
+
+	n.challengerInfo.UpdatePeerCount(peerCount)
+	n.challengerInfo.UpdateNetworkLatency(latency)
+	n.lastSeen = time.Now()
+
+	n.logger.Debug("Challenger network info updated",
+		"peer_count", peerCount, "latency", latency)
+	return nil
+}
+
+// AddChallengerPeer adds a challenger peer to the known peers list
+func (n *P2PNode) AddChallengerPeer(challengerInfo *types.ChallengerInfo) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger {
+		return fmt.Errorf("node is not a challenger")
+	}
+
+	if challengerInfo == nil {
+		return fmt.Errorf("challenger info cannot be nil")
+	}
+
+	// Validate challenger info
+	if err := utils.ValidateChallengerID(challengerInfo.ID); err != nil {
+		return fmt.Errorf("invalid challenger peer ID: %w", err)
+	}
+
+	if err := utils.ValidateNetworkAddress(challengerInfo.Address); err != nil {
+		return fmt.Errorf("invalid challenger peer address: %w", err)
+	}
+
+	// Add to known challenger peers
+	n.challengerPeers[challengerInfo.ID] = challengerInfo
+
+	n.logger.Debug("Challenger peer added",
+		"challenger_id", challengerInfo.ID, "address", challengerInfo.Address)
+	return nil
+}
+
+// RemoveChallengerPeer removes a challenger peer from the known peers list
+func (n *P2PNode) RemoveChallengerPeer(challengerID string) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger {
+		return
+	}
+
+	delete(n.challengerPeers, challengerID)
+	n.logger.Debug("Challenger peer removed", "challenger_id", challengerID)
+}
+
+// GetChallengerPeers returns a copy of known challenger peers
+func (n *P2PNode) GetChallengerPeers() map[string]*types.ChallengerInfo {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	if !n.isChallenger {
+		return nil
+	}
+
+	// Return a copy to prevent external modification
+	peers := make(map[string]*types.ChallengerInfo)
+	for id, info := range n.challengerPeers {
+		infoCopy := *info
+		peers[id] = &infoCopy
+	}
+
+	return peers
+}
+
+// GetChallengerPeer returns information about a specific challenger peer
+func (n *P2PNode) GetChallengerPeer(challengerID string) *types.ChallengerInfo {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	if !n.isChallenger {
+		return nil
+	}
+
+	info, exists := n.challengerPeers[challengerID]
+	if !exists {
+		return nil
+	}
+
+	// Return a copy to prevent external modification
+	infoCopy := *info
+	return &infoCopy
+}
+
+// GetChallengerPeerCount returns the number of known challenger peers
+func (n *P2PNode) GetChallengerPeerCount() int {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	if !n.isChallenger {
+		return 0
+	}
+
+	return len(n.challengerPeers)
+}
+
+// CleanupStaleChallengerPeers removes stale challenger peers
+func (n *P2PNode) CleanupStaleChallengerPeers(staleDuration time.Duration) int {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	if !n.isChallenger {
+		return 0
+	}
+
+	removed := 0
+	for id, info := range n.challengerPeers {
+		if info.IsStale(staleDuration) {
+			delete(n.challengerPeers, id)
+			removed++
+			n.logger.Debug("Stale challenger peer removed", "challenger_id", id)
+		}
+	}
+
+	if removed > 0 {
+		n.logger.Info("Stale challenger peers cleaned up", "removed_count", removed)
+	}
+
+	return removed
 }
 
 // Peer represents a connected peer node
@@ -638,4 +889,11 @@ func deserializePublicKey(data []byte) *ecdsa.PublicKey {
 		X:     x,
 		Y:     y,
 	}
+}
+
+// GetDiscoveryService returns the discovery service
+func (n *P2PNode) GetDiscoveryService() *DiscoveryService {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+	return n.discovery
 }

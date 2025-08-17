@@ -3,6 +3,8 @@ package network
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/ethereum-optimism/optimism/op-challenger/p2p/types"
 )
 
 // MessageType represents the type of P2P message
@@ -27,6 +29,13 @@ const (
 	MessageTypeStateCommitment
 	MessageTypeStateSyncRequest
 	MessageTypeStateSyncResponse
+	// Phase 1 basic challenger messages
+	MessageTypeChallengerHello
+	MessageTypeChallengerGoodbye
+	MessageTypeChallengerHeartbeat
+	MessageTypeChallengerStateUpdate
+	MessageTypeChallengerPeerDiscovery
+	MessageTypeChallengerPeerResponse
 )
 
 // Message represents a P2P network message
@@ -219,6 +228,94 @@ func (m *Message) IsValid() bool {
 		return false
 	}
 	return true
+}
+
+// Phase 1 Challenger Message Structures
+
+// ChallengerHelloMessage represents a challenger introduction message
+type ChallengerHelloMessage struct {
+	ChallengerInfo *types.ChallengerInfo `json:"challenger_info"`
+	Timestamp      time.Time             `json:"timestamp"`
+}
+
+// ChallengerGoodbyeMessage represents a challenger leaving message
+type ChallengerGoodbyeMessage struct {
+	ChallengerID string    `json:"challenger_id"`
+	Reason       string    `json:"reason,omitempty"`
+	Timestamp    time.Time `json:"timestamp"`
+}
+
+// ChallengerHeartbeatMessage represents a challenger heartbeat message
+type ChallengerHeartbeatMessage struct {
+	ChallengerID   string                 `json:"challenger_id"`
+	Status         types.ChallengerStatus `json:"status"`
+	PeerCount      int                    `json:"peer_count"`
+	NetworkLatency time.Duration          `json:"network_latency"`
+	Timestamp      time.Time              `json:"timestamp"`
+}
+
+// ChallengerStateUpdateMessage represents a challenger state update message
+type ChallengerStateUpdateMessage struct {
+	ChallengerID string             `json:"challenger_id"`
+	StateUpdate  *types.StateUpdate `json:"state_update"`
+	Timestamp    time.Time          `json:"timestamp"`
+}
+
+// ChallengerPeerDiscoveryMessage represents a challenger peer discovery request
+type ChallengerPeerDiscoveryMessage struct {
+	ChallengerID  string               `json:"challenger_id"`
+	RequestID     string               `json:"request_id"`
+	MaxPeers      int                  `json:"max_peers"`
+	RequiredRoles types.ChallengerRole `json:"required_roles,omitempty"`
+	Timestamp     time.Time            `json:"timestamp"`
+}
+
+// ChallengerPeerResponseMessage represents a response to challenger peer discovery
+type ChallengerPeerResponseMessage struct {
+	RequestID    string                  `json:"request_id"`
+	ChallengerID string                  `json:"challenger_id"`
+	KnownPeers   []*types.ChallengerInfo `json:"known_peers"`
+	Timestamp    time.Time               `json:"timestamp"`
+}
+
+// CreateChallengerMessage creates a new challenger message with the given type and payload
+func CreateChallengerMessage(msgType MessageType, from, to string, payload interface{}) (*Message, error) {
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Message{
+		Type:      msgType,
+		From:      from,
+		To:        to,
+		Payload:   payloadBytes,
+		Timestamp: time.Now(),
+		Nonce:     uint64(time.Now().UnixNano()), // Simple nonce generation
+	}, nil
+}
+
+// ParseChallengerMessage parses a challenger message payload into the specified type
+func ParseChallengerMessage(msg *Message, target interface{}) error {
+	return json.Unmarshal(msg.Payload, target)
+}
+
+// IsChallengerMessage returns true if the message is a challenger-specific message
+func IsChallengerMessage(msgType MessageType) bool {
+	switch msgType {
+	case MessageTypeChallengerHello,
+		MessageTypeChallengerGoodbye,
+		MessageTypeChallengerHeartbeat,
+		MessageTypeChallengerStateUpdate,
+		MessageTypeChallengerPeerDiscovery,
+		MessageTypeChallengerPeerResponse,
+		MessageTypeChallengerRegistration,
+		MessageTypeChallengerStatus,
+		MessageTypeChallengerChallenge:
+		return true
+	default:
+		return false
+	}
 }
 
 // GetAge returns the age of the message
