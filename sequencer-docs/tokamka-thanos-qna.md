@@ -3,10 +3,8 @@
 Repo : https://github.com/tokamak-network/tokamak-thanos
 
 
-## 질문
-여기서는 Dispute Game 의 type을 무엇으로 설정하고 배포하는가?
+## Thokamak-thanos는 Dispute Game 의 type을 무엇으로 설정하고 배포하는가?
 
-## 답변
 
 ### 1. 정의된 Game Type들
 
