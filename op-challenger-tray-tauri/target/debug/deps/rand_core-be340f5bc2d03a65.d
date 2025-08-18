@@ -1,0 +1,12 @@
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/librand_core-be340f5bc2d03a65.rmeta: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/error.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/block.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/impls.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/le.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/os.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/librand_core-be340f5bc2d03a65.rlib: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/error.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/block.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/impls.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/le.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/os.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/rand_core-be340f5bc2d03a65.d: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/error.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/block.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/impls.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/le.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/os.rs
+
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/lib.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/error.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/block.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/impls.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/le.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rand_core-0.5.1/src/os.rs:

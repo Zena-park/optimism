@@ -1,0 +1,12 @@
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libcocoa-2bca3a803a022dc7.rmeta: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/appkit.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/base.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/foundation.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/quartzcore.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/macros.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libcocoa-2bca3a803a022dc7.rlib: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/appkit.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/base.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/foundation.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/quartzcore.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/macros.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/cocoa-2bca3a803a022dc7.d: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/appkit.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/base.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/foundation.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/quartzcore.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/macros.rs
+
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/lib.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/appkit.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/base.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/foundation.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/quartzcore.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cocoa-0.24.1/src/macros.rs:
