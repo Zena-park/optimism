@@ -9,6 +9,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -56,12 +58,29 @@ type P2PNode struct {
 	ctx    context.Context    // Context
 	cancel context.CancelFunc // Cancel function
 
+	// LibP2P integration (when using libp2p backend)
+	libp2pNode *LibP2PNode // Reference to libp2p node if using libp2p
+
 	// Logging
 	logger log.Logger
 }
 
 // EnableChallenger enables challenger functionality for this node
 func (n *P2PNode) EnableChallenger(challengerID string) error {
+	// If using libp2p backend, delegate to it
+	if n.libp2pNode != nil {
+		err := n.libp2pNode.EnableChallenger(challengerID)
+		if err == nil {
+			// Also update local state for compatibility
+			n.mu.Lock()
+			n.isChallenger = true
+			n.challengerInfo = n.libp2pNode.GetChallengerInfo()
+			n.mu.Unlock()
+		}
+		return err
+	}
+
+	// Legacy implementation
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -336,8 +355,85 @@ type P2PConfig struct {
 	DiscoveryConfig DiscoveryConfig
 }
 
-// NewP2PNode creates a new P2P node
+// NewP2PNode creates a new P2P node (defaults to libp2p implementation)
 func NewP2PNode(config *P2PConfig, logger log.Logger) (*P2PNode, error) {
+	// Check if we should use libp2p (default) or legacy TCP
+	useLibP2P := true // Default to libp2p
+	
+	if useLibP2P {
+		// Convert config and create libp2p node
+		libp2pConfig := &LibP2PNodeConfig{
+			ListenAddrs:     []string{fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", getPortFromAddress(config.Address))},
+			BootstrapPeers:  convertBootstrapNodes(config.BootstrapNodes),
+			MaxPeers:        config.MaxPeers,
+			TransportConfig: config.TransportConfig,
+			DiscoveryConfig: config.DiscoveryConfig,
+		}
+		
+		libp2pNode, err := NewLibP2PNode(libp2pConfig, logger)
+		if err != nil {
+			// Fall back to legacy implementation if libp2p fails
+			logger.Warn("Failed to create libp2p node, falling back to legacy TCP", "error", err)
+			return newLegacyP2PNode(config, logger)
+		}
+		
+		// Wrap in adapter for backward compatibility
+		_ = ConvertLibP2PToLegacy(libp2pNode)
+		
+		// Create a P2PNode that delegates to the adapter
+		return &P2PNode{
+			id:         libp2pNode.GetID(),
+			address:    libp2pNode.GetAddress(),
+			peers:      make(map[string]*Peer),
+			status:     NodeStatusStarting,
+			reputation: 1.0,
+			ctx:        libp2pNode.ctx,
+			cancel:     libp2pNode.cancel,
+			logger:     logger,
+			// Store reference to libp2p node for delegation
+			libp2pNode: libp2pNode,
+		}, nil
+	}
+	
+	return newLegacyP2PNode(config, logger)
+}
+
+// Helper functions for config conversion
+
+// getPortFromAddress extracts port from address string
+func getPortFromAddress(address string) int {
+	// Simple port extraction - assumes format "host:port"
+	parts := strings.Split(address, ":")
+	if len(parts) < 2 {
+		return 8000 // Default port
+	}
+	
+	port, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 8000 // Default port
+	}
+	
+	return port
+}
+
+// convertBootstrapNodes converts TCP addresses to libp2p multiaddresses
+func convertBootstrapNodes(tcpAddresses []string) []string {
+	var multiaddrs []string
+	for _, addr := range tcpAddresses {
+		// Simple conversion - assumes TCP addresses in format "host:port"
+		parts := strings.Split(addr, ":")
+		if len(parts) >= 2 {
+			// For now, create basic multiaddr without peer ID
+			// In production, you'd need proper peer ID mapping
+			maddr := fmt.Sprintf("/ip4/%s/tcp/%s", parts[0], parts[1])
+			multiaddrs = append(multiaddrs, maddr)
+		}
+	}
+	return multiaddrs
+}
+
+// newLegacyP2PNode creates a legacy TCP-based P2P node
+func newLegacyP2PNode(config *P2PConfig, logger log.Logger) (*P2PNode, error) {
 	// Generate or load private key
 	privateKey, err := loadOrGeneratePrivateKey(config.PrivateKeyPath)
 	if err != nil {
@@ -386,6 +482,18 @@ func (n *P2PNode) Start() error {
 		return fmt.Errorf("node is not in starting status")
 	}
 
+	// If using libp2p backend, delegate to it
+	if n.libp2pNode != nil {
+		err := n.libp2pNode.Start()
+		if err != nil {
+			return err
+		}
+		n.status = NodeStatusRunning
+		n.logger.Info("P2P node started (libp2p)", "id", n.id, "address", n.address)
+		return nil
+	}
+
+	// Legacy TCP implementation
 	// Start transport layer
 	if err := n.transport.Start(n.address); err != nil {
 		return fmt.Errorf("failed to start transport: %w", err)
@@ -403,7 +511,7 @@ func (n *P2PNode) Start() error {
 	go n.managePeers()
 
 	n.status = NodeStatusRunning
-	n.logger.Info("P2P node started", "id", n.id, "address", n.address)
+	n.logger.Info("P2P node started (legacy TCP)", "id", n.id, "address", n.address)
 
 	return nil
 }
@@ -419,6 +527,18 @@ func (n *P2PNode) Stop() error {
 
 	n.status = NodeStatusStopping
 
+	// If using libp2p backend, delegate to it
+	if n.libp2pNode != nil {
+		err := n.libp2pNode.Stop()
+		if err != nil {
+			n.logger.Warn("Failed to stop libp2p node", "error", err)
+		}
+		n.status = NodeStatusStopped
+		n.logger.Info("P2P node stopped (libp2p)")
+		return nil
+	}
+
+	// Legacy TCP implementation
 	// Cancel context to stop all goroutines
 	n.cancel()
 
@@ -440,7 +560,7 @@ func (n *P2PNode) Stop() error {
 	}
 
 	n.status = NodeStatusStopped
-	n.logger.Info("P2P node stopped")
+	n.logger.Info("P2P node stopped (legacy TCP)")
 
 	return nil
 }
@@ -495,6 +615,12 @@ func (n *P2PNode) ConnectAndHandshake(address string) (*Peer, error) {
 
 // BroadcastMessage broadcasts a message to all connected peers
 func (n *P2PNode) BroadcastMessage(msg *Message) error {
+	// If using libp2p backend, delegate to it
+	if n.libp2pNode != nil {
+		return n.libp2pNode.BroadcastMessage(msg)
+	}
+
+	// Legacy TCP implementation
 	n.mu.RLock()
 	peers := make([]*Peer, 0, len(n.peers))
 	for _, peer := range n.peers {
