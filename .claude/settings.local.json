@@ -29,7 +29,8 @@
       "Bash(curl:*)",
       "Bash(PWD=/Users/zena/gitwork/optimism/op-challenger-tray-tauri cargo build)",
       "Bash(git push:*)",
-      "Bash(git commit -m \"fix: Resolve web initialization and alignment issues\n\n- Fix Tauri API initialization with proper null checks\n- Implement native system UI styling for better user experience  \n- Fix right alignment issues in status badges and card headers\n- Add browser mode compatibility for development\")"
+      "Bash(git commit -m \"fix: Resolve web initialization and alignment issues\n\n- Fix Tauri API initialization with proper null checks\n- Implement native system UI styling for better user experience  \n- Fix right alignment issues in status badges and card headers\n- Add browser mode compatibility for development\")",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
