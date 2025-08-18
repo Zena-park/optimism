@@ -50,3 +50,8 @@ __pycache__
 
 # Ignore echidna artifacts
 crytic-export
+
+# Rust/Cargo build artifacts
+**/target/
+**/*.backup.*
+*.log

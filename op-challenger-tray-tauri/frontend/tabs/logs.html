@@ -1,0 +1,33 @@
+<!-- Logs Tab -->
+<div class="tab-panel" id="logs">
+    <div class="panel-header">
+        <h1>System Logs</h1>
+        <div class="header-controls">
+            <select class="filter-select" id="logLevel">
+                <option value="all">All Levels</option>
+                <option value="error">Error</option>
+                <option value="warn">Warning</option>
+                <option value="info">Info</option>
+                <option value="debug">Debug</option>
+            </select>
+            <button class="btn btn-secondary" onclick="clearLogs()">
+                <span class="btn-icon">🗑️</span> Clear
+            </button>
+            <button class="btn btn-secondary" onclick="exportLogs()">
+                <span class="btn-icon">📤</span> Export
+            </button>
+        </div>
+    </div>
+
+    <div class="logs-container">
+        <div class="logs-panel">
+            <div class="logs-content" id="logsContent">
+                <div class="log-entry">
+                    <span class="log-time">2024-01-01 00:00:00</span>
+                    <span class="log-level info">INFO</span>
+                    <span class="log-message">Challenger application started</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
