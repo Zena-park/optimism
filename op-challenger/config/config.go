@@ -56,6 +56,19 @@ const (
 	DefaultMaxPendingTx = 10
 )
 
+// P2PConfig contains P2P networking configuration
+type P2PConfig struct {
+	Enabled           bool     // Enable P2P networking
+	ListenAddr        string   // P2P listen address in multiaddr format
+	Bootnodes         []string // List of bootstrap nodes
+	MaxPeers          uint     // Maximum number of peers
+	NetworkID         string   // Network identifier
+	PrivateKeyPath    string   // Path to private key file
+	DiscoveryEnabled  bool     // Enable DHT-based discovery
+	RateLimit         uint     // Rate limit for messages per second
+	ConnectionLimit   uint     // Maximum concurrent connections
+}
+
 // Config is a well typed config that is parsed from the CLI params.
 // This also contains config options for auxiliary services.
 // It is used to initialize the challenger.
@@ -98,6 +111,9 @@ type Config struct {
 	TxMgrConfig   txmgr.CLIConfig
 	MetricsConfig opmetrics.CLIConfig
 	PprofConfig   oppprof.CLIConfig
+	
+	// P2P Configuration
+	P2P P2PConfig
 }
 
 func NewInteropConfig(

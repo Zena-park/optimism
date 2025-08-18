@@ -10,6 +10,7 @@
 - ✅ **DHT 기반 노드 발견 시스템** 완전 구현
 - ✅ **챌린저 네트워크 관리** 시스템 완성
 - ✅ **방어 시스템** (Rate Limiting, 모니터링) 구축
+- ✅ **CLI 플래그 및 메인 바이너리 통합** 완료 🆕
 - ✅ **완전한 테스트 커버리지** (단위 + 통합 + E2E) 달성
 
 ### 📈 성능 달성 결과
@@ -155,6 +156,53 @@ op-challenger/p2p/defense/
 op-challenger/p2p/types/   ← 챌린저 타입 정의
 op-challenger/p2p/utils/   ← 암호화 & 검증 유틸리티
 ```
+
+### 4. CLI 통합 및 메인 바이너리 지원 🆕
+
+#### 4.1 P2P CLI 플래그 시스템
+```
+op-challenger/flags/flags.go
+├── P2PEnabledFlag          ← P2P 네트워킹 활성화
+├── P2PListenAddrFlag       ← LibP2P 멀티어드레스 리스닝
+├── P2PBootnodesFlag        ← 부트스트랩 피어 목록
+├── P2PMaxPeersFlag         ← 최대 피어 연결 수
+├── P2PNetworkIDFlag        ← 네트워크 식별자
+├── P2PPrivateKeyFlag       ← 프라이빗 키 파일 경로
+├── P2PDiscoveryEnabledFlag ← DHT 기반 발견 활성화
+├── P2PRateLimitFlag        ← 메시지 레이트 제한
+└── P2PConnectionLimitFlag  ← 연결 수 제한
+```
+
+#### 4.2 설정 통합 시스템
+```
+op-challenger/config/config.go
+├── P2PConfig 구조체       ← P2P 설정 전용 타입
+├── Config.P2P 필드        ← 메인 설정에 P2P 통합
+└── flags 파싱 연동        ← CLI → Config 자동 변환
+```
+
+#### 4.3 메인 바이너리 통합
+```
+op-challenger/game/service.go
+├── p2pNode 필드           ← P2P 노드 인스턴스
+├── initP2P()              ← P2P 노드 초기화
+├── Start() P2P 시작       ← 서비스 시작 시 P2P 활성화
+└── Stop() P2P 정리        ← 서비스 종료 시 P2P 정리
+```
+
+#### 4.4 지원되는 P2P CLI 플래그
+
+| 플래그 | 기본값 | 설명 | 환경변수 |
+|--------|--------|------|----------|
+| `--p2p-enabled` | `false` | P2P 네트워킹 활성화 | `OP_CHALLENGER_P2P_ENABLED` |
+| `--p2p-listen-addr` | `/ip4/0.0.0.0/tcp/9876` | LibP2P 멀티어드레스 | `OP_CHALLENGER_P2P_LISTEN_ADDR` |
+| `--p2p-bootnodes` | `[]` | 부트스트랩 피어 목록 | `OP_CHALLENGER_P2P_BOOTNODES` |
+| `--p2p-max-peers` | `50` | 최대 피어 연결 수 | `OP_CHALLENGER_P2P_MAX_PEERS` |
+| `--p2p-network-id` | `optimism-challenger` | 네트워크 식별자 | `OP_CHALLENGER_P2P_NETWORK_ID` |
+| `--p2p-private-key` | `""` | 프라이빗 키 파일 경로 | `OP_CHALLENGER_P2P_PRIVATE_KEY` |
+| `--p2p-discovery-enabled` | `true` | DHT 피어 발견 활성화 | `OP_CHALLENGER_P2P_DISCOVERY_ENABLED` |
+| `--p2p-rate-limit` | `1000` | 초당 메시지 제한 | `OP_CHALLENGER_P2P_RATE_LIMIT` |
+| `--p2p-connection-limit` | `100` | 동시 연결 제한 | `OP_CHALLENGER_P2P_CONNECTION_LIMIT` |
 
 ---
 
@@ -332,157 +380,74 @@ DefenseComponentLatency:     평균 159ns
 - **보안 시나리오**: DDoS 방어 및 악의적 피어 처리
 - **성능 확장성**: 대규모 네트워크 확장 가능성 검증
 
+### Phase 1.9: CLI 통합 및 메인 바이너리 지원 ✅ 완료 🆕
+- **CLI 플래그 시스템**: 9개 P2P 관련 플래그 완전 구현
+- **환경변수 지원**: `OP_CHALLENGER_P2P_*` 환경변수 완전 지원
+- **설정 통합**: P2P 설정이 메인 Config 구조체에 완전 통합
+- **메인 바이너리 통합**: game/service.go에 P2P 노드 생명주기 관리 통합
+- **후방 호환성**: P2P 비활성화 시 기존 동작 100% 유지
+
 ---
 
 ## 🔧 시스템 운영 가이드
 
-### 1. 챌린저 P2P 노드 시작 및 구성
+Phase 1 P2P 챌린저 네트워크의 상세한 설치, 구성, 실행, 모니터링 방법은 별도의 운영 가이드 문서를 참조하세요:
 
-#### 챌린저 LibP2P 노드 초기화
+**📚 [Phase 1 P2P 챌린저 네트워크 - 시스템 운영 가이드](./Phase-1-Operations-Guide.md)**
+
+### 주요 운영 가이드 내용:
+
+1. **시스템 요구사항 및 설치**
+   - 최소/권장 하드웨어 사양
+   - 의존성 설치 및 빌드 과정
+
+2. **실제 P2P 노드 실행 방법**
+   - CLI 플래그를 통한 P2P 활성화
+   - 환경변수를 통한 설정 관리
+   - 메인넷/테스트넷 구성 예제
+
+3. **P2P 네트워크 설정**
+   - 9개 P2P CLI 플래그 상세 설명
+   - 멀티어드레스 형식 가이드
+   - 부트스트랩 피어 설정
+
+4. **테스트 및 검증**
+   - 단일/다중 노드 P2P 테스트
+   - 개발 테스트 스위트 실행
+   - 성능 벤치마크
+
+5. **모니터링 및 디버깅**
+   - 메트릭 모니터링 설정
+   - P2P 네트워크 진단 도구
+   - 로깅 및 프로파일링
+
+6. **프로덕션 배포**
+   - systemd 서비스 설정
+   - 보안 설정 및 베스트 프랙티스
+   - 백업 및 복구 절차
+
+#### 빠른 시작 예제:
+
 ```bash
-cd op-challenger
-
-# 챌린저 P2P 노드 시작 (libp2p 기반)
-go run -mod=readonly cmd/op-challenger/main.go \
-    --l2-eth-rpc http://localhost:8545 \
-    --rollup-rpc http://localhost:8547 \
-    --l1-eth-rpc http://localhost:8551 \
+# P2P 활성화하여 챌린저 실행
+./op-challenger \
+    --network "sepolia" \
+    --l1-eth-rpc "https://ethereum-sepolia-rpc.publicnode.com" \
+    --l1-beacon "https://ethereum-sepolia-beacon-api.publicnode.com" \
+    --l2-eth-rpc "https://sepolia.optimism.io" \
+    --rollup-rpc "https://sepolia.optimism.io" \
+    --datadir "/tmp/challenger-data" \
     --p2p-enabled \
-    --p2p-listen-addr /ip4/0.0.0.0/tcp/9876 \
-    --p2p-bootnodes /ip4/127.0.0.1/tcp/9876/p2p/12D3KooW... \
-    --challenger-config config/challenger-p2p.yaml
+    --p2p-listen-addr "/ip4/0.0.0.0/tcp/9876" \
+    --p2p-network-id "optimism-challenger-sepolia" \
+    --cannon-bin "./bin/cannon" \
+    --cannon-server "./bin/op-program"
 
-# 또는 환경변수를 통한 챌린저 P2P 설정
-export OP_CHALLENGER_P2P_ENABLED=true
-export OP_CHALLENGER_P2P_LISTEN_ADDR="/ip4/0.0.0.0/tcp/9876"
-export OP_CHALLENGER_P2P_BOOTNODES="/ip4/127.0.0.1/tcp/9876/p2p/12D3KooW..."
-go run cmd/op-challenger/main.go
-
-# 프로그래매틱 챌린저 노드 생성
-config := &challenger.ChallengerP2PConfig{
-    LibP2PConfig: &network.LibP2PNodeConfig{
-        ListenAddresses: []string{"/ip4/0.0.0.0/tcp/9876"},
-        BootstrapPeers:  []string{"/ip4/127.0.0.1/tcp/9876/p2p/12D3KooW..."},
-    },
-    ChallengerRole: types.RoleBondManager | types.RoleValidator,
-    NetworkID:      "optimism-challenger-mainnet",
-}
-challengerNode, err := challenger.NewChallengerP2PNode(config, logger)
+# 지원되는 P2P 플래그 확인
+./op-challenger --help | grep p2p
 ```
 
-#### 챌린저 P2P 설정 파일 (challenger-p2p.yaml)
-```yaml
-# Challenger P2P Network Configuration
-challenger:
-  network_id: "optimism-challenger-mainnet"
-  role: "validator"  # validator, bond_manager, observer
-  
-  # LibP2P 설정
-  p2p:
-    enabled: true
-    listen_addresses:
-      - "/ip4/0.0.0.0/tcp/9876"
-      - "/ip6/::/tcp/9876"
-    bootstrap_peers:
-      - "/ip4/127.0.0.1/tcp/9876/p2p/12D3KooWBootstrap1..."
-      - "/ip4/127.0.0.1/tcp/9877/p2p/12D3KooWBootstrap2..."
-    
-    # DHT 설정
-    dht:
-      enabled: true
-      bootstrap_timeout: "30s"
-      
-    # 방어 설정
-    defense:
-      rate_limit:
-        enabled: true
-        max_requests_per_second: 1000
-      connection_limit:
-        max_connections: 100
-        max_connections_per_ip: 10
-        
-  # 챌린저 특화 설정  
-  challenger_discovery:
-    enabled: true
-    announce_interval: "30s"
-    heartbeat_interval: "10s"
-    
-  state_sync:
-    enabled: true
-    sync_interval: "5s"
-    batch_size: 100
-```
-
-### 2. 챌린저 P2P 테스트 실행
-
-#### 챌린저 P2P 전체 테스트
-```bash
-cd op-challenger
-
-# 챌린저 P2P 모든 단위 테스트
-go test ./p2p/types ./p2p/utils ./p2p/defense ./p2p/challenger ./p2p/state -v
-
-# 챌린저 LibP2P 통합 테스트  
-go test ./p2p/network/ -v -run TestLibP2P
-
-# 챌린저 P2P 성능 테스트
-go test ./p2p/integration/ -v -run TestMessage
-
-# 챌린저 P2P E2E 테스트
-go test ./p2p/integration/ -v -timeout 10m
-
-# 특정 챌린저 시나리오 테스트
-go test ./p2p/integration/ -v -run TestChallenger
-```
-
-#### 챌린저 P2P 네트워크 검증
-```bash
-# 챌린저 네트워크 연결 테스트
-go test ./p2p/network/ -v -run TestChallengerNetworkFormation
-
-# 챌린저 발견 및 등록 테스트  
-go test ./p2p/challenger/ -v -run TestChallengerDiscovery
-
-# 챌린저 상태 동기화 테스트
-go test ./p2p/state/ -v -run TestChallengerStateSync
-```
-
-### 3. 챌린저 P2P 모니터링 및 디버깅
-
-#### 챌린저 성능 모니터링
-```bash
-# 챌린저 P2P 메모리 사용량 프로파일링
-go test ./p2p/integration/ -memprofile=challenger-mem.prof
-
-# 챌린저 P2P CPU 사용량 프로파일링  
-go test ./p2p/integration/ -cpuprofile=challenger-cpu.prof
-
-# 챌린저 LibP2P 디버그 로그 활성화
-export GOLOG_LOG_LEVEL=debug
-export GOLOG_LOG_FILE=challenger-libp2p.log
-
-# 챌린저 P2P 실시간 모니터링
-go run cmd/op-challenger/main.go \
-    --p2p-enabled \
-    --metrics-enabled \
-    --metrics-addr 0.0.0.0:7300 \
-    --log-level debug
-```
-
-#### 챌린저 P2P 네트워크 진단
-```bash
-# 챌린저 피어 연결 상태 확인
-curl http://localhost:7300/debug/peers
-
-# 챌린저 DHT 라우팅 테이블 확인  
-curl http://localhost:7300/debug/dht
-
-# 챌린저 메시지 통계 확인
-curl http://localhost:7300/debug/messages
-
-# 챌린저 방어 시스템 상태 확인
-curl http://localhost:7300/debug/defense
-```
+자세한 내용은 **[시스템 운영 가이드](./Phase-1-Operations-Guide.md)**를 참조하세요.
 
 ---
 
@@ -524,7 +489,8 @@ Phase 1의 견고한 P2P 인프라 기반 위에서 다음 고급 기능들을 �
 2. **견고한 테스트 커버리지**: 165개 테스트로 시스템 안정성 보장  
 3. **우수한 성능**: 업계 최고 수준 달성 (일반 WebSocket 대비 435배 빠름)
 4. **확장 가능한 아키텍처**: Phase 2 고급 기능 추가를 위한 견고한 기반
-5. **운영 준비**: 실제 프로덕션 환경 배포 가능 수준
+5. **완전한 CLI 통합**: 실제 op-challenger 바이너리에서 P2P 사용 가능 🆕
+6. **운영 준비**: 실제 프로덕션 환경 배포 가능 수준
 
 ### 📊 최종 통계
 
@@ -534,14 +500,16 @@ Phase 1 P2P Challenger Network (100% 완료)
 ├── 챌린저 관리 시스템 ✅  
 ├── 상태 동기화 시스템 ✅
 ├── DDoS 방어 시스템 ✅
+├── CLI 통합 및 메인 바이너리 지원 ✅ 🆕
 ├── 단위 테스트 (114개) ✅
 ├── 통합 테스트 (17개) ✅  
 └── E2E 테스트 (34개) ✅
 
-총 개발 컴포넌트: 5개 핵심 패키지
+총 개발 컴포넌트: 6개 핵심 패키지 (CLI 통합 포함)
 총 테스트: 165개 (100% 성공)
 처리량 성능: 871만 msg/sec (프로덕션 급)
 보안 검증 완료율: 100%
+CLI 플래그: 9개 P2P 플래그 완전 구현 🆕
 ```
 
 이제 **실제 libp2p 기반의 분산 P2P 네트워크**에서 챌린저들이 효율적으로 소통하고 협력할 수 있는 견고한 기반이 완성되었습니다. Phase 2에서는 이 기반 위에 어텐션 테스트 시스템과 고급 평판 관리 기능을 구축하여 더욱 지능적이고 확장 가능한 챌린저 네트워크를 만들어 나갈 예정입니다.

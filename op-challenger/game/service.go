@@ -30,6 +30,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-service/oppprof"
 	"github.com/ethereum-optimism/optimism/op-service/sources/batching"
 	"github.com/ethereum-optimism/optimism/op-service/txmgr"
+	"github.com/ethereum-optimism/optimism/op-challenger/p2p/network"
 )
 
 type Service struct {
@@ -63,6 +64,8 @@ type Service struct {
 
 	balanceMetricer io.Closer
 
+	// P2P networking
+	p2pNode network.P2PNodeInterface
 
 	// Configuration
 	config *config.Config
@@ -120,6 +123,9 @@ func (s *Service) initFromConfig(ctx context.Context, cfg *config.Config) error 
 	}
 	if err := s.initLargePreimages(); err != nil {
 		return fmt.Errorf("failed to init large preimage scheduler: %w", err)
+	}
+	if err := s.initP2P(ctx, cfg); err != nil {
+		return fmt.Errorf("failed to init P2P networking: %w", err)
 	}
 
 	s.initMonitor(cfg)
@@ -239,6 +245,34 @@ func (s *Service) initLargePreimages() error {
 	return nil
 }
 
+func (s *Service) initP2P(ctx context.Context, cfg *config.Config) error {
+	if !cfg.P2P.Enabled {
+		s.logger.Info("P2P networking disabled")
+		return nil
+	}
+
+	s.logger.Info("initializing P2P networking", "listen_addr", cfg.P2P.ListenAddr, "network_id", cfg.P2P.NetworkID)
+
+	// Create libp2p configuration
+	libp2pConfig := &network.LibP2PNodeConfig{
+		ListenAddrs:     []string{cfg.P2P.ListenAddr},
+		BootstrapPeers:  cfg.P2P.Bootnodes,
+		MaxPeers:        int(cfg.P2P.MaxPeers),
+		TransportConfig: network.DefaultTransportConfig(),
+		DiscoveryConfig: network.DefaultDiscoveryConfigFactory(),
+	}
+
+	// Create P2P node using the factory
+	p2pNode, err := network.NewP2PNodeWithType(network.NodeTypeLibP2P, libp2pConfig, s.logger)
+	if err != nil {
+		return fmt.Errorf("failed to create P2P node: %w", err)
+	}
+
+	s.p2pNode = p2pNode
+	s.logger.Info("P2P networking initialized successfully")
+	return nil
+}
+
 func (s *Service) initMonitor(cfg *config.Config) {
 	s.monitor = newGameMonitor(s.logger, s.l1Clock, s.factoryContract, s.sched, s.preimages, cfg.GameWindow, s.claimer, cfg.GameAllowlist, s.pollClient)
 
@@ -246,13 +280,21 @@ func (s *Service) initMonitor(cfg *config.Config) {
 
 
 func (s *Service) Start(ctx context.Context) error {
+	// Start P2P node if enabled
+	if s.p2pNode != nil {
+		s.logger.Info("starting P2P networking")
+		if err := s.p2pNode.Start(); err != nil {
+			return fmt.Errorf("failed to start P2P node: %w", err)
+		}
+		s.logger.Info("P2P networking started successfully")
+	}
+
 	s.logger.Info("starting scheduler")
 	s.sched.Start(ctx)
 	s.claimer.Start(ctx)
 	s.preimages.Start(ctx)
 	s.logger.Info("starting monitoring")
 	s.monitor.StartMonitoring()
-
 
 	s.logger.Info("challenger game service start completed")
 	return nil
@@ -306,6 +348,12 @@ func (s *Service) Stop(ctx context.Context) error {
 	if s.metricsSrv != nil {
 		if err := s.metricsSrv.Stop(ctx); err != nil {
 			result = errors.Join(result, fmt.Errorf("failed to close metrics server: %w", err))
+		}
+	}
+	if s.p2pNode != nil {
+		s.logger.Info("stopping P2P networking")
+		if err := s.p2pNode.Stop(); err != nil {
+			result = errors.Join(result, fmt.Errorf("failed to close P2P node: %w", err))
 		}
 	}
 	s.stopped.Store(true)
