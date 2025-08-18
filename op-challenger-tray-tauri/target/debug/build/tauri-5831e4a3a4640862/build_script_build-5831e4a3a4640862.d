@@ -1,5 +1,0 @@
-/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/build/tauri-5831e4a3a4640862/build_script_build-5831e4a3a4640862: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tauri-1.8.3/build.rs
-
-/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/build/tauri-5831e4a3a4640862/build_script_build-5831e4a3a4640862.d: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tauri-1.8.3/build.rs
-
-/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tauri-1.8.3/build.rs:
