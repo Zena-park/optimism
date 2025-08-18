@@ -5,7 +5,7 @@ let invoke;
 // DOM 로드 완료 시 앱 초기화
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM 로드 완료 - 앱 초기화 시작');
-    
+
     try {
         // Tauri API 가져오기 (선택적)
         if (window.__TAURI__ && window.__TAURI__.tauri) {
@@ -68,7 +68,7 @@ const networkDefaults = {
 async function initializeApp() {
     try {
         console.log('앱 초기화 시작...');
-        
+
         // 이벤트 리스너 설정
         setupEventListeners();
 
@@ -104,21 +104,21 @@ async function initializeApp() {
 // 이벤트 리스너 설정
 function setupEventListeners() {
     console.log('이벤트 리스너 설정 시작');
-    
+
     // 사이드바 네비게이션
     const navItems = document.querySelectorAll('.nav-item');
     console.log(`네비게이션 아이템 개수: ${navItems.length}`);
-    
+
     navItems.forEach((item, index) => {
         const tabName = item.dataset.tab;
         console.log(`네비게이션 아이템 ${index}: ${tabName}`);
-        
+
         // 기존 이벤트 리스너 제거 (중복 방지)
         item.removeEventListener('click', handleTabClick);
-        
+
         // 새 이벤트 리스너 추가
         item.addEventListener('click', handleTabClick);
-        
+
         // 시각적 피드백을 위한 hover 효과도 추가
         item.addEventListener('mouseenter', () => {
             console.log(`Mouse enter: ${tabName}`);
@@ -127,7 +127,7 @@ function setupEventListeners() {
 
     // 윈도우 종료 시 정리
     window.addEventListener('beforeunload', cleanup);
-    
+
     console.log('이벤트 리스너 설정 완료');
 }
 
@@ -136,13 +136,13 @@ function handleTabClick(event) {
     const item = event.currentTarget;
     const tabName = item.dataset.tab;
     console.log(`탭 클릭: ${tabName}`);
-    
+
     // 클릭 효과
     item.style.transform = 'scale(0.95)';
     setTimeout(() => {
         item.style.transform = '';
     }, 150);
-    
+
     switchTab(tabName);
 }
 
@@ -180,7 +180,7 @@ function setupTabEventListeners(tabName) {
 // 탭 전환 - CSS 방식
 function switchTab(tabName) {
     console.log(`탭 전환: ${currentTab} → ${tabName}`);
-    
+
     if (currentTab === tabName) {
         return;
     }
@@ -304,7 +304,7 @@ async function loadSettings() {
         console.error('설정 로드 실패:', error);
         // 오류가 발생해도 앱은 계속 실행되도록 함
         currentConfig = {
-            network: 'sepolia', 
+            network: 'sepolia',
             monitor_only: true,
             p2p_enabled: true
         };
@@ -342,7 +342,7 @@ async function updateSystemStatus() {
     try {
         const status = await invoke('get_status');
         console.log('시스템 상태:', status);
-        
+
         // DOM 요소 업데이트
         const systemStatusElement = document.getElementById('systemStatus');
         if (systemStatusElement) {
@@ -409,7 +409,7 @@ function stopLogsPolling() {
 // 알림 표시
 function showNotification(message, type = 'info') {
     console.log(`[${type.toUpperCase()}] ${message}`);
-    
+
     // 간단한 알림 시스템
     const notification = document.createElement('div');
     notification.style.cssText = `

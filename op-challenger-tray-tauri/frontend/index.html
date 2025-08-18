@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimism Challenger Tray</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- 상단 헤더 네비게이션 -->
+        <header class="top-header">
+            <nav class="top-nav">
+                <div class="nav-item active" data-tab="dashboard">Dashboard</div>
+                <div class="nav-item" data-tab="l2-monitor">L2 Monitor</div>
+                <div class="nav-item" data-tab="p2p-challengers">P2P Challengers</div>
+                <div class="nav-item" data-tab="history">History</div>
+                <div class="nav-item" data-tab="settings">Settings</div>
+                <div class="nav-item" data-tab="logs">Logs</div>
+            </nav>
+        </header>
+
+        <!-- 메인 컨테이너 -->
+        <div class="main-container">
+            <!-- 콘텐츠 영역 -->
+            <main class="content">
+                <!-- Dashboard Tab -->
+                <div class="tab-panel active" id="dashboard">
+                    <div class="header-controls">
+                        <button class="btn btn-primary" id="startBtn" onclick="startChallenger()">
+                            <span class="btn-icon">▶️</span> Start
+                        </button>
+                        <button class="btn btn-secondary" id="stopBtn" onclick="stopChallenger()">
+                            <span class="btn-icon">⏸️</span> Stop
+                        </button>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="card status-card">
+                            <div class="card-header">
+                                <h3>System Status</h3>
+                                <div class="status-badge" id="systemStatus">Stopped</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="stat-row">
+                                    <span class="stat-label">Mode:</span>
+                                    <span class="stat-value" id="operationMode">Monitor Only</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Network:</span>
+                                    <span class="stat-value" id="currentNetwork">Sepolia</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Uptime:</span>
+                                    <span class="stat-value" id="uptime">00:00:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>P2P Network</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="stat-row">
+                                    <span class="stat-label">Connected Peers:</span>
+                                    <span class="stat-value" id="peerCount">0</span>
+                                </div>
+                                <div class="stat-row">
+                                    <span class="stat-label">Network ID:</span>
+                                    <span class="stat-value" id="networkId">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L2 Monitor Tab -->
+                <div class="tab-panel" id="l2-monitor">
+                    <div class="header-controls">
+                        <button class="btn btn-secondary" onclick="refreshL2Data()">
+                            <span class="btn-icon">🔄</span> Refresh
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Network Status</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>L2 Monitor 내용이 여기에 표시됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- P2P Challengers Tab -->
+                <div class="tab-panel" id="p2p-challengers">
+                    <div class="header-controls">
+                        <button class="btn btn-secondary" onclick="refreshP2PData()">
+                            <span class="btn-icon">🔄</span> Refresh
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Connected Peers</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>P2P Challengers 내용이 여기에 표시됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="tab-panel" id="history">
+                    <div class="header-controls">
+                        <button class="btn btn-secondary" onclick="exportHistory()">
+                            <span class="btn-icon">📤</span> Export
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Events</h3>
+                        </div>
+                        <div class="card-content">
+                            <p>History 내용이 여기에 표시됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tab-panel" id="settings">
+                    <div class="header-controls">
+                        <button class="btn btn-primary" onclick="saveSettings()">
+                            <span class="btn-icon">💾</span> Save
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetSettings()">
+                            <span class="btn-icon">🔄</span> Reset
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Network Configuration</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Network</label>
+                                    <select id="network">
+                                        <option value="sepolia">Sepolia (Testnet)</option>
+                                        <option value="mainnet">Mainnet</option>
+                                        <option value="local">Local</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>L1 Ethereum RPC</label>
+                                    <input type="text" id="l1_eth_rpc" placeholder="https://ethereum-sepolia-rpc.publicnode.com">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs Tab -->
+                <div class="tab-panel" id="logs">
+                    <div class="header-controls">
+                        <button class="btn btn-secondary" onclick="clearLogs()">
+                            <span class="btn-icon">🗑️</span> Clear
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Application Logs</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="logsContent">
+                                <p>Logs 내용이 여기에 표시됩니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
