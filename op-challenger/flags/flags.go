@@ -243,6 +243,60 @@ var (
 		EnvVars: prefixEnvVars("UNSAFE_ALLOW_INVALID_PRESTATE"),
 		Hidden:  true, // Hidden as this is an unsafe flag added only for testing purposes
 	}
+
+	// P2P Flags
+	P2PEnabledFlag = &cli.BoolFlag{
+		Name:    "p2p-enabled",
+		Usage:   "Enable P2P networking for challenger coordination",
+		EnvVars: prefixEnvVars("P2P_ENABLED"),
+		Value:   false,
+	}
+	P2PListenAddrFlag = &cli.StringFlag{
+		Name:    "p2p-listen-addr",
+		Usage:   "P2P listen address in multiaddr format (e.g., /ip4/0.0.0.0/tcp/9876)",
+		EnvVars: prefixEnvVars("P2P_LISTEN_ADDR"),
+		Value:   "/ip4/0.0.0.0/tcp/9876",
+	}
+	P2PBootnodesFlag = &cli.StringSliceFlag{
+		Name:    "p2p-bootnodes",
+		Usage:   "List of P2P bootstrap nodes in multiaddr format",
+		EnvVars: prefixEnvVars("P2P_BOOTNODES"),
+	}
+	P2PMaxPeersFlag = &cli.UintFlag{
+		Name:    "p2p-max-peers",
+		Usage:   "Maximum number of P2P peers to connect to",
+		EnvVars: prefixEnvVars("P2P_MAX_PEERS"),
+		Value:   50,
+	}
+	P2PNetworkIDFlag = &cli.StringFlag{
+		Name:    "p2p-network-id",
+		Usage:   "P2P network identifier for challenger coordination",
+		EnvVars: prefixEnvVars("P2P_NETWORK_ID"),
+		Value:   "optimism-challenger",
+	}
+	P2PPrivateKeyFlag = &cli.StringFlag{
+		Name:    "p2p-private-key",
+		Usage:   "Path to P2P private key file (will be generated if not exists)",
+		EnvVars: prefixEnvVars("P2P_PRIVATE_KEY"),
+	}
+	P2PDiscoveryEnabledFlag = &cli.BoolFlag{
+		Name:    "p2p-discovery-enabled",
+		Usage:   "Enable DHT-based peer discovery",
+		EnvVars: prefixEnvVars("P2P_DISCOVERY_ENABLED"),
+		Value:   true,
+	}
+	P2PRateLimitFlag = &cli.UintFlag{
+		Name:    "p2p-rate-limit",
+		Usage:   "Maximum messages per second for rate limiting",
+		EnvVars: prefixEnvVars("P2P_RATE_LIMIT"),
+		Value:   1000,
+	}
+	P2PConnectionLimitFlag = &cli.UintFlag{
+		Name:    "p2p-connection-limit",
+		Usage:   "Maximum number of concurrent connections",
+		EnvVars: prefixEnvVars("P2P_CONNECTION_LIMIT"),
+		Value:   100,
+	}
 )
 
 // requiredFlags are checked by [CheckRequired]
@@ -283,6 +337,16 @@ var optionalFlags = []cli.Flag{
 	GameWindowFlag,
 	SelectiveClaimResolutionFlag,
 	UnsafeAllowInvalidPrestate,
+	// P2P Flags
+	P2PEnabledFlag,
+	P2PListenAddrFlag,
+	P2PBootnodesFlag,
+	P2PMaxPeersFlag,
+	P2PNetworkIDFlag,
+	P2PPrivateKeyFlag,
+	P2PDiscoveryEnabledFlag,
+	P2PRateLimitFlag,
+	P2PConnectionLimitFlag,
 }
 
 func init() {
@@ -609,6 +673,20 @@ func NewConfigFromCLI(ctx *cli.Context, logger log.Logger) (*config.Config, erro
 	l1Beacon := ctx.String(L1BeaconFlag.Name)
 	l2Rpcs := ctx.StringSlice(L2EthRpcFlag.Name)
 	l2Experimental := ctx.String(L2ExperimentalEthRpcFlag.Name)
+	
+	// Parse P2P configuration
+	p2pConfig := config.P2PConfig{
+		Enabled:          ctx.Bool(P2PEnabledFlag.Name),
+		ListenAddr:       ctx.String(P2PListenAddrFlag.Name),
+		Bootnodes:        ctx.StringSlice(P2PBootnodesFlag.Name),
+		MaxPeers:         ctx.Uint(P2PMaxPeersFlag.Name),
+		NetworkID:        ctx.String(P2PNetworkIDFlag.Name),
+		PrivateKeyPath:   ctx.String(P2PPrivateKeyFlag.Name),
+		DiscoveryEnabled: ctx.Bool(P2PDiscoveryEnabledFlag.Name),
+		RateLimit:        ctx.Uint(P2PRateLimitFlag.Name),
+		ConnectionLimit:  ctx.Uint(P2PConnectionLimitFlag.Name),
+	}
+	
 	return &config.Config{
 		// Required Flags
 		L1EthRpc:                l1EthRpc,
@@ -687,5 +765,6 @@ func NewConfigFromCLI(ctx *cli.Context, logger log.Logger) (*config.Config, erro
 		PprofConfig:                         pprofConfig,
 		SelectiveClaimResolution:            ctx.Bool(SelectiveClaimResolutionFlag.Name),
 		AllowInvalidPrestate:                ctx.Bool(UnsafeAllowInvalidPrestate.Name),
+		P2P:                                 p2pConfig,
 	}, nil
 }
