@@ -54,4 +54,6 @@ crytic-export
 # Rust/Cargo build artifacts
 **/target/
 **/*.backup.*
+**/*backup*
 *.log
+**/.rustc_info.json
