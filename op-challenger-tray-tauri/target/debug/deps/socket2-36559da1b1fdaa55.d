@@ -1,0 +1,11 @@
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libsocket2-36559da1b1fdaa55.rmeta: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockaddr.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/socket.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockref.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sys/unix.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libsocket2-36559da1b1fdaa55.rlib: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockaddr.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/socket.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockref.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sys/unix.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/socket2-36559da1b1fdaa55.d: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockaddr.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/socket.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockref.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sys/unix.rs
+
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/lib.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockaddr.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/socket.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sockref.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/socket2-0.5.10/src/sys/unix.rs:

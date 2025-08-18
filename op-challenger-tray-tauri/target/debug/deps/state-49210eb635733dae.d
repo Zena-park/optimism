@@ -1,0 +1,12 @@
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libstate-49210eb635733dae.rmeta: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/ident_hash.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/storage.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/init.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/shim.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/container.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libstate-49210eb635733dae.rlib: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/ident_hash.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/storage.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/init.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/shim.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/container.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/state-49210eb635733dae.d: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/ident_hash.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/storage.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/init.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/shim.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/container.rs
+
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/lib.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/ident_hash.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/storage.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/init.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/shim.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/state-0.5.3/src/container.rs:

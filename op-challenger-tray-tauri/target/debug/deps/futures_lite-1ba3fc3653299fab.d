@@ -1,0 +1,11 @@
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libfutures_lite-1ba3fc3653299fab.rmeta: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/future.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/prelude.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/stream.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/io.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/libfutures_lite-1ba3fc3653299fab.rlib: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/future.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/prelude.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/stream.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/io.rs
+
+/Users/zena/gitwork/optimism/op-challenger-tray-tauri/target/debug/deps/futures_lite-1ba3fc3653299fab.d: /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/lib.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/future.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/prelude.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/stream.rs /Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/io.rs
+
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/lib.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/future.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/prelude.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/stream.rs:
+/Users/zena/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-lite-2.6.1/src/io.rs:
