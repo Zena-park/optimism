@@ -99,8 +99,8 @@ func TestChallengerNetworkManagerWithDefense(t *testing.T) {
 
 		// Check statistics
 		stats := monitor.GetCurrentStats()
-		assert.Greater(t, stats.TotalMessages, uint64(0), "Should have recorded messages")
-		assert.Greater(t, stats.TotalErrors, uint64(0), "Should have recorded errors")
+		assert.Greater(t, stats.TotalMessages, int64(0), "Should have recorded messages")
+		assert.Greater(t, stats.TotalErrors, int64(0), "Should have recorded errors")
 	})
 
 	t.Log("ChallengerNetworkManager + Defense integration test completed successfully")
@@ -155,14 +155,17 @@ func TestNetworkManagerWithStateManager(t *testing.T) {
 
 // TestStateManagerWithDefense tests integration between StateManager and Defense components
 func TestStateManagerWithDefense(t *testing.T) {
+	// Create logger for testing
+	logger := log.New()
+
 	// Create defense components
 	rateLimiterConfig := types.DefaultRateLimiterConfig()
 	rateLimiterConfig.MaxRequestsPerSecond = 20
-	rateLimiter := defense.NewRateLimiter(rateLimiterConfig, nil)
+	rateLimiter := defense.NewRateLimiter(rateLimiterConfig, logger)
 
 	monitorConfig := types.DefaultBasicMonitorConfig()
 	monitorConfig.UpdateInterval = 50 * time.Millisecond
-	monitor := defense.NewBasicMonitor(monitorConfig, nil)
+	monitor := defense.NewBasicMonitor(monitorConfig, logger)
 
 	require.NoError(t, rateLimiter.Start())
 	require.NoError(t, monitor.Start())
@@ -199,8 +202,8 @@ func TestStateManagerWithDefense(t *testing.T) {
 
 		// Check monitoring statistics
 		stats := monitor.GetCurrentStats()
-		assert.Greater(t, stats.TotalMessages, uint64(0), "Should have recorded state sync messages")
-		assert.Greater(t, stats.TotalErrors, uint64(0), "Should have recorded rate limit errors")
+		assert.Greater(t, stats.TotalMessages, int64(0), "Should have recorded state sync messages")
+		assert.Greater(t, stats.TotalErrors, int64(0), "Should have recorded rate limit errors")
 	})
 
 	// Test state monitoring
@@ -216,7 +219,7 @@ func TestStateManagerWithDefense(t *testing.T) {
 
 		// Verify monitoring captured state operations
 		stats := monitor.GetCurrentStats()
-		assert.GreaterOrEqual(t, stats.TotalMessages, uint64(3), "Should have recorded state messages")
+		assert.GreaterOrEqual(t, stats.TotalMessages, int64(3), "Should have recorded state messages")
 	})
 
 	t.Log("StateManager + Defense integration test completed successfully")
