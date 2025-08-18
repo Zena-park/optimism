@@ -53,6 +53,7 @@ crytic-export
 
 # Rust/Cargo build artifacts
 **/target/
+**/target/debug/
 **/*.backup.*
 **/*backup*
 *.log
