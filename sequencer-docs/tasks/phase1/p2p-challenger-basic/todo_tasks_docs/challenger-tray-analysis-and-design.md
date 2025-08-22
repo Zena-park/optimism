@@ -3,10 +3,11 @@
 ## 📋 Table of Contents
 1. [Project Overview](#project-overview)
 2. [Requirements Analysis](#requirements-analysis)
-3. [UI Design Specifications](#ui-design-specifications)
-4. [Technical Implementation](#technical-implementation)
-5. [User Experience Flow](#user-experience-flow)
-6. [Development Roadmap](#development-roadmap)
+3. [Auto-Setup & Environment Configuration](#auto-setup--environment-configuration)
+4. [UI Design Specifications](#ui-design-specifications)
+5. [Technical Implementation](#technical-implementation)
+6. [User Experience Flow](#user-experience-flow)
+7. [Development Roadmap](#development-roadmap)
 
 ---
 
@@ -73,7 +74,667 @@ Create a premium desktop tray application for managing Optimism Challenger opera
 
 ---
 
-## 📋 3. UI Design Specifications
+## 📋 3. Auto-Setup & Environment Configuration
+
+### 🎯 **One-Click Installation Philosophy**
+
+**Vision**: Transform P2P Challenger setup from a complex 30-step process into a **single-click experience** that handles everything automatically.
+
+#### **Current State (Manual Setup)**
+```
+📚 User reads 800+ line operation guide
+🔧 Installs Go, Git, Make manually  
+📦 Clones 1GB+ Optimism repository
+🏗️ Builds 3+ binaries manually (5-10 minutes)
+⚙️ Configures 20+ CLI flags manually
+🌐 Finds and sets P2P bootnodes manually
+🚀 Finally runs challenger after 30-60 minutes
+```
+
+#### **Target State (Auto-Setup)**
+```
+📱 Download 10MB tray app
+✨ Run app → Setup Wizard appears
+☕ Wait 5-8 minutes while everything installs
+🎉 Ready to use P2P Challenger immediately
+```
+
+### 🚀 **Auto-Setup Architecture**
+
+#### **Setup Wizard Framework**
+```rust
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AutoSetup {
+    pub current_step: usize,
+    pub total_steps: usize,
+    pub steps: Vec<SetupStep>,
+    pub install_path: PathBuf,
+    pub progress_callback: Option<fn(SetupProgress)>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum SetupStep {
+    EnvironmentCheck,     // Check Git, Go, disk space
+    CreateDirectories,    // Create optimism directory structure
+    CloneRepository,      // Git clone optimism repo
+    BuildCannon,          // Build cannon binary
+    BuildOpProgram,       // Build op-program + prestate
+    BuildChallenger,      // Build op-challenger binary
+    ConfigureDefaults,    // Set default configurations
+    TestBinaries,         // Verify all binaries work
+    Complete,             // Setup wizard complete
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SetupProgress {
+    pub step: String,
+    pub progress_percent: u8,
+    pub estimated_time: Option<String>,
+    pub current_operation: String,
+    pub log_messages: Vec<String>,
+    pub error: Option<String>,
+}
+```
+
+#### **Environment Detection & Validation**
+```rust
+#[tauri::command]
+async fn check_system_requirements() -> Result<SystemStatus, String> {
+    let status = SystemStatus {
+        git_installed: check_command_exists("git").await?,
+        go_installed: check_go_version().await?,
+        make_available: check_command_exists("make").await?,
+        rust_installed: check_command_exists("cargo").await?,
+        disk_space_gb: get_available_disk_space().await?,
+        internet_connection: test_internet_connectivity().await?,
+        recommended_specs: evaluate_system_specs().await?,
+    };
+    
+    Ok(status)
+}
+
+#[tauri::command]
+async fn auto_install_dependencies(component: String) -> Result<InstallProgress, String> {
+    match component.as_str() {
+        "git" => install_git_for_platform().await,
+        "go" => install_go_latest().await,
+        "make" => install_make_tools().await,
+        _ => Err("Unknown component".to_string())
+    }
+}
+```
+
+### 🏗️ **Automated Build System**
+
+#### **Repository Management**
+```rust
+#[tauri::command]
+async fn clone_optimism_repository(
+    target_dir: String,
+    progress_callback: fn(CloneProgress)
+) -> Result<CloneResult, String> {
+    let repo_url = "https://github.com/ethereum-optimism/optimism.git";
+    let shallow_clone = true; // Only latest commit for faster download
+    let branch = "develop";   // Or specific release tag
+    
+    // Progress tracking
+    let clone_progress = |stats: git2::Progress| {
+        progress_callback(CloneProgress {
+            received_objects: stats.received_objects(),
+            total_objects: stats.total_objects(),
+            received_bytes: stats.received_bytes(),
+            indexed_objects: stats.indexed_objects(),
+        });
+    };
+    
+    // Execute clone with progress
+    let repo = git2::Repository::clone_with_progress(
+        repo_url,
+        Path::new(&target_dir),
+        Some(clone_progress)
+    )?;
+    
+    Ok(CloneResult {
+        path: target_dir,
+        commit_hash: get_latest_commit_hash(&repo)?,
+        size_mb: calculate_directory_size(&target_dir)?,
+    })
+}
+```
+
+#### **Binary Build Automation**
+```rust
+#[tauri::command]
+async fn build_essential_binaries(
+    optimism_path: String,
+    progress_callback: fn(BuildProgress)
+) -> Result<BuildResults, String> {
+    let builds = vec![
+        ("cannon", "cannon", vec!["make", "cannon"]),
+        ("op-program", "op-program", vec!["make", "op-program"]),
+        ("op-challenger", "op-challenger", vec!["go", "build", "-o", "bin/op-challenger", "./cmd/"]),
+    ];
+    
+    let mut results = BuildResults::new();
+    
+    for (component, directory, cmd) in builds {
+        progress_callback(BuildProgress {
+            component: component.to_string(),
+            status: "Building...".to_string(),
+            progress: 0,
+        });
+        
+        let build_result = execute_build_command(
+            &optimism_path.join(directory),
+            &cmd,
+            |output| {
+                // Real-time build output parsing
+                parse_build_progress(component, output)
+            }
+        ).await?;
+        
+        results.add_result(component, build_result);
+        
+        progress_callback(BuildProgress {
+            component: component.to_string(),
+            status: "Complete".to_string(),
+            progress: 100,
+        });
+    }
+    
+    // Verify all binaries exist and are executable
+    verify_binaries(&optimism_path, &["cannon", "op-program", "op-challenger"]).await?;
+    
+    Ok(results)
+}
+```
+
+#### **Critical File Validation**
+```rust
+#[tauri::command]
+async fn validate_installation(install_path: String) -> Result<ValidationReport, String> {
+    let required_files = vec![
+        ("cannon/bin/cannon", true, "Cannon binary"),
+        ("op-program/bin/op-program", true, "OP Program binary"),
+        ("op-program/bin/prestate-mt64Next.bin.gz", true, "Prestate file (19MB)"),
+        ("op-challenger/bin/op-challenger", true, "Challenger binary"),
+        ("packages/contracts-bedrock/deploy-config/sepolia.json", false, "Sepolia config"),
+    ];
+    
+    let mut report = ValidationReport::new();
+    
+    for (path, critical, description) in required_files {
+        let full_path = Path::new(&install_path).join(path);
+        let exists = full_path.exists();
+        let size = if exists { get_file_size(&full_path)? } else { 0 };
+        
+        report.add_file_check(FileCheck {
+            path: path.to_string(),
+            description: description.to_string(),
+            exists,
+            size_bytes: size,
+            critical,
+            executable: if exists { is_executable(&full_path)? } else { false },
+        });
+    }
+    
+    // Special validation for prestate file
+    let prestate_path = Path::new(&install_path).join("op-program/bin/prestate-mt64Next.bin.gz");
+    if prestate_path.exists() {
+        let size_mb = get_file_size(&prestate_path)? as f64 / 1024.0 / 1024.0;
+        if size_mb < 15.0 || size_mb > 25.0 {
+            report.add_warning("Prestate file size unexpected - may be corrupted".to_string());
+        }
+    }
+    
+    Ok(report)
+}
+```
+
+### 🎨 **Setup Wizard UI Design**
+
+#### **Setup Progress Interface**
+```html
+<!-- Setup Wizard Container -->
+<div id="setup-wizard" class="wizard-container">
+    <!-- Header -->
+    <div class="wizard-header">
+        <h1>🚀 Optimism Challenger Setup</h1>
+        <div class="setup-stage" id="setup-stage">Environment Check</div>
+    </div>
+    
+    <!-- Overall Progress -->
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="overall-progress" style="width: 0%"></div>
+        </div>
+        <div class="progress-text">
+            <span id="progress-percent">0%</span> Complete
+            <span id="progress-eta" class="eta">Estimating time...</span>
+        </div>
+    </div>
+    
+    <!-- Step-by-Step Progress -->
+    <div class="setup-steps">
+        <div class="step-item active" id="step-env-check">
+            <div class="step-icon">🔍</div>
+            <div class="step-content">
+                <div class="step-title">Environment Check</div>
+                <div class="step-status">Checking system requirements...</div>
+            </div>
+            <div class="step-indicator">⏳</div>
+        </div>
+        
+        <div class="step-item" id="step-download">
+            <div class="step-icon">📦</div>
+            <div class="step-content">
+                <div class="step-title">Download Repository</div>
+                <div class="step-status">Waiting...</div>
+                <div class="step-details">
+                    <div class="download-progress">
+                        <span id="download-size">0 MB</span> / <span id="download-total">1,200 MB</span>
+                        <div class="mini-progress">
+                            <div class="mini-progress-fill" id="download-progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="step-indicator">⏳</div>
+        </div>
+        
+        <div class="step-item" id="step-build">
+            <div class="step-icon">🏗️</div>
+            <div class="step-content">
+                <div class="step-title">Build Binaries</div>
+                <div class="step-status">Waiting...</div>
+                <div class="step-details">
+                    <div class="build-status">
+                        <div class="build-item">
+                            <span class="build-name">Cannon:</span>
+                            <span class="build-result" id="cannon-build">⏳ Waiting</span>
+                        </div>
+                        <div class="build-item">
+                            <span class="build-name">OP Program:</span>
+                            <span class="build-result" id="op-program-build">⏳ Waiting</span>
+                        </div>
+                        <div class="build-item">
+                            <span class="build-name">Challenger:</span>
+                            <span class="build-result" id="challenger-build">⏳ Waiting</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="step-indicator">⏳</div>
+        </div>
+        
+        <div class="step-item" id="step-complete">
+            <div class="step-icon">🎉</div>
+            <div class="step-content">
+                <div class="step-title">Setup Complete</div>
+                <div class="step-status">Ready to use!</div>
+            </div>
+            <div class="step-indicator">⏳</div>
+        </div>
+    </div>
+    
+    <!-- Live Log Output -->
+    <div class="log-container">
+        <div class="log-header">
+            <h4>📋 Setup Log</h4>
+            <button class="btn-small" onclick="toggleLogExpand()">Expand</button>
+        </div>
+        <div class="log-content" id="setup-logs">
+            <div class="log-line">[12:34:56] Starting environment check...</div>
+            <div class="log-line">[12:34:57] Git version 2.40.1 detected ✅</div>
+            <div class="log-line">[12:34:58] Go version 1.21.3 detected ✅</div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="wizard-actions">
+        <button class="btn btn-secondary" id="cancel-setup" onclick="cancelSetup()">Cancel</button>
+        <button class="btn btn-primary" id="start-setup" onclick="startAutoSetup()">Start Setup</button>
+        <button class="btn btn-success" id="complete-setup" onclick="finishSetup()" style="display: none;">Start Using Challenger</button>
+    </div>
+</div>
+```
+
+#### **Environment Check Interface**
+```html
+<!-- System Requirements Check -->
+<div class="requirements-check" id="requirements-panel">
+    <h3>🔍 System Requirements</h3>
+    
+    <div class="requirement-list">
+        <div class="req-item">
+            <div class="req-icon" id="git-status">⏳</div>
+            <div class="req-content">
+                <div class="req-name">Git</div>
+                <div class="req-detail" id="git-detail">Checking...</div>
+            </div>
+            <div class="req-actions">
+                <button class="btn-small" id="install-git" onclick="installGit()" style="display: none;">Install</button>
+            </div>
+        </div>
+        
+        <div class="req-item">
+            <div class="req-icon" id="go-status">⏳</div>
+            <div class="req-content">
+                <div class="req-name">Go (1.21+)</div>
+                <div class="req-detail" id="go-detail">Checking...</div>
+            </div>
+            <div class="req-actions">
+                <button class="btn-small" id="install-go" onclick="installGo()" style="display: none;">Install</button>
+            </div>
+        </div>
+        
+        <div class="req-item">
+            <div class="req-icon" id="disk-status">⏳</div>
+            <div class="req-content">
+                <div class="req-name">Disk Space</div>
+                <div class="req-detail" id="disk-detail">Checking...</div>
+            </div>
+        </div>
+        
+        <div class="req-item">
+            <div class="req-icon" id="internet-status">⏳</div>
+            <div class="req-content">
+                <div class="req-name">Internet Connection</div>
+                <div class="req-detail" id="internet-detail">Checking...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="system-summary">
+        <h4>📊 System Summary</h4>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-label">OS:</span>
+                <span class="summary-value" id="os-info">macOS 14.0</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Architecture:</span>
+                <span class="summary-value" id="arch-info">arm64</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Available RAM:</span>
+                <span class="summary-value" id="ram-info">64 GB</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Free Space:</span>
+                <span class="summary-value" id="disk-info">250 GB</span>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+### 🔧 **Smart Configuration Management**
+
+#### **Auto-Configuration Logic**
+```rust
+#[tauri::command]
+async fn generate_smart_config(
+    network: String,
+    user_preferences: UserPreferences
+) -> Result<ChallengerConfig, String> {
+    let base_config = match network.as_str() {
+        "sepolia" => generate_sepolia_config(),
+        "mainnet" => generate_mainnet_config(),
+        "local" => generate_local_devnet_config(),
+        _ => return Err("Unknown network".to_string())
+    }?;
+    
+    // Apply intelligent defaults
+    let mut config = base_config;
+    config.datadir = determine_optimal_datadir(&user_preferences).await?;
+    config.p2p_listen_addr = find_available_p2p_port().await?;
+    config.p2p_max_peers = calculate_optimal_max_peers(&user_preferences).await?;
+    
+    // Auto-detect binary paths after installation
+    config.cannon_bin = find_binary_path("cannon").await?;
+    config.cannon_server = find_binary_path("op-program").await?;
+    config.cannon_prestate = find_prestate_file().await?;
+    
+    // Validate configuration
+    validate_generated_config(&config).await?;
+    
+    Ok(config)
+}
+
+#[tauri::command]
+async fn discover_community_bootnodes(network: String) -> Result<Vec<String>, String> {
+    // Fetch from multiple sources
+    let sources = vec![
+        format!("https://community.optimism.io/bootnodes/{}.json", network),
+        format!("https://github.com/ethereum-optimism/optimism/raw/develop/bootnodes/{}.txt", network),
+        // Fallback hardcoded reliable bootnodes
+    ];
+    
+    let mut bootnodes = Vec::new();
+    
+    for source in sources {
+        match fetch_bootnodes_from_source(&source).await {
+            Ok(mut nodes) => bootnodes.append(&mut nodes),
+            Err(e) => log::warn!("Failed to fetch from {}: {}", source, e),
+        }
+    }
+    
+    // Validate and test bootnodes
+    let validated = validate_bootnodes(bootnodes).await?;
+    
+    Ok(validated)
+}
+```
+
+#### **Installation Directory Structure**
+```
+OptimismChallenger/                    # User home directory
+├── bin/                               # Final binaries (symlinked)
+│   ├── cannon -> ../optimism/cannon/bin/cannon
+│   ├── op-program -> ../optimism/op-program/bin/op-program
+│   └── op-challenger -> ../optimism/op-challenger/bin/op-challenger
+├── config/                           # Configuration files
+│   ├── challenger.yaml               # Main configuration
+│   ├── networks/                     # Network-specific configs
+│   │   ├── sepolia.yaml
+│   │   ├── mainnet.yaml
+│   │   └── local.yaml
+│   └── bootnodes/                   # Community bootnode lists
+│       ├── sepolia-bootnodes.txt
+│       └── mainnet-bootnodes.txt
+├── data/                            # Runtime data
+│   ├── challenger-data/             # Challenger working directory
+│   ├── logs/                        # Application logs
+│   └── cache/                       # Temporary cache files
+├── optimism/                        # Git repository (hidden from user)
+│   ├── cannon/
+│   ├── op-program/
+│   ├── op-challenger/
+│   └── ...
+└── installer.log                   # Setup wizard log
+```
+
+### 📊 **Progress Tracking & Error Recovery**
+
+#### **Progress Estimation Algorithm**
+```rust
+impl SetupProgress {
+    pub fn estimate_remaining_time(&self, start_time: Instant) -> Option<Duration> {
+        let elapsed = start_time.elapsed();
+        if self.progress_percent == 0 { return None; }
+        
+        let estimated_total = elapsed.as_secs() * 100 / self.progress_percent as u64;
+        let remaining = estimated_total - elapsed.as_secs();
+        
+        Some(Duration::from_secs(remaining))
+    }
+    
+    pub fn update_with_operation(&mut self, operation: &str, sub_progress: u8) {
+        self.current_operation = operation.to_string();
+        
+        // Weighted progress based on operation complexity
+        let base_progress = match self.step.as_str() {
+            "EnvironmentCheck" => 0,      // 0-10%
+            "CloneRepository" => 10,      // 10-40% (network intensive)
+            "BuildCannon" => 40,          // 40-60% (CPU intensive)
+            "BuildOpProgram" => 60,       // 60-85% (CPU + file generation)
+            "BuildChallenger" => 85,      // 85-95% (final build)
+            "ConfigureDefaults" => 95,    // 95-100% (quick)
+            _ => self.progress_percent
+        };
+        
+        let step_weight = match self.step.as_str() {
+            "EnvironmentCheck" => 10,
+            "CloneRepository" => 30,
+            "BuildCannon" => 20,
+            "BuildOpProgram" => 25,
+            "BuildChallenger" => 10,
+            "ConfigureDefaults" => 5,
+            _ => 1
+        };
+        
+        self.progress_percent = base_progress + (sub_progress * step_weight / 100);
+    }
+}
+```
+
+#### **Error Recovery Strategies**
+```rust
+#[derive(Debug)]
+pub enum SetupError {
+    NetworkError(String),      // Internet connectivity issues
+    DiskSpaceError(String),    // Insufficient disk space  
+    BuildError(String),        // Compilation failures
+    PermissionError(String),   // File system permissions
+    DependencyError(String),   // Missing system dependencies
+    CorruptedDownload(String), // Download integrity issues
+}
+
+impl SetupError {
+    pub fn recovery_suggestion(&self) -> String {
+        match self {
+            SetupError::NetworkError(_) => 
+                "Check internet connection and try again. Setup will resume from where it left off.".to_string(),
+            SetupError::DiskSpaceError(_) => 
+                "Free up at least 2GB of disk space and restart setup.".to_string(),
+            SetupError::BuildError(e) if e.contains("go: not found") => 
+                "Go programming language not installed. Click 'Install Go' to install automatically.".to_string(),
+            SetupError::BuildError(_) => 
+                "Build failed. This may be temporary - click 'Retry' to attempt the build again.".to_string(),
+            SetupError::PermissionError(_) => 
+                "Permission denied. Try running the application as administrator or check file permissions.".to_string(),
+            SetupError::DependencyError(dep) => 
+                format!("Missing dependency: {}. Install it or click 'Auto-Install' if available.", dep),
+            SetupError::CorruptedDownload(_) => 
+                "Download corrupted. Will automatically retry with integrity checking.".to_string(),
+        }
+    }
+    
+    pub fn can_auto_retry(&self) -> bool {
+        matches!(self, 
+            SetupError::NetworkError(_) | 
+            SetupError::BuildError(_) |
+            SetupError::CorruptedDownload(_)
+        )
+    }
+}
+```
+
+### 🎯 **User Experience Enhancements**
+
+#### **Smart Setup Modes**
+```rust
+#[derive(Debug, Serialize, Deserialize)]
+pub enum SetupMode {
+    Express,        // Fastest setup with sensible defaults
+    Custom,         // User chooses options step-by-step  
+    Developer,      // Full control with advanced options
+    Offline,        // Setup from pre-downloaded package
+}
+
+impl SetupMode {
+    pub fn get_steps(&self) -> Vec<SetupStep> {
+        match self {
+            SetupMode::Express => vec![
+                SetupStep::EnvironmentCheck,
+                SetupStep::CloneRepository,
+                SetupStep::BuildEssentials,    // Combined build step
+                SetupStep::AutoConfigure,      // Auto-generate config
+                SetupStep::Complete,
+            ],
+            SetupMode::Custom => vec![
+                SetupStep::EnvironmentCheck,
+                SetupStep::NetworkSelection,   // User chooses network
+                SetupStep::DirectorySelection, // User chooses install path
+                SetupStep::CloneRepository,
+                SetupStep::ComponentSelection, // User chooses what to build
+                SetupStep::BuildSelected,
+                SetupStep::ConfigurationWizard,// Step-by-step config
+                SetupStep::Complete,
+            ],
+            SetupMode::Developer => vec![
+                SetupStep::EnvironmentCheck,
+                SetupStep::AdvancedOptions,    // Show all options
+                SetupStep::SourceSelection,    // Git branch/tag selection
+                SetupStep::CloneRepository,
+                SetupStep::BuildConfiguration, // Build flags, optimizations
+                SetupStep::BuildAll,
+                SetupStep::ManualConfiguration,// Manual config editing
+                SetupStep::ValidationTests,   // Run test suite
+                SetupStep::Complete,
+            ],
+            SetupMode::Offline => vec![
+                SetupStep::EnvironmentCheck,
+                SetupStep::ExtractPackage,     // Extract pre-built binaries
+                SetupStep::VerifyIntegrity,    // Check signatures/hashes
+                SetupStep::InstallBinaries,    // Copy to final locations
+                SetupStep::AutoConfigure,
+                SetupStep::Complete,
+            ],
+        }
+    }
+}
+```
+
+#### **Installation Size Optimization**
+```rust
+#[tauri::command]
+async fn optimize_installation(install_path: String) -> Result<OptimizationReport, String> {
+    let mut report = OptimizationReport::new();
+    
+    // Remove unnecessary files to save space
+    let cleanup_targets = vec![
+        "optimism/.git/",           // Git history (can save 500MB+)
+        "optimism/target/debug/",   // Debug build artifacts
+        "optimism/node_modules/",   // JS dependencies (if any)
+        "optimism/docs/",           // Documentation
+        "optimism/.circleci/",      // CI configuration
+        "optimism/.github/",        // GitHub configuration
+    ];
+    
+    for target in cleanup_targets {
+        let path = Path::new(&install_path).join(target);
+        if path.exists() {
+            let size_before = calculate_directory_size(&path)?;
+            std::fs::remove_dir_all(&path)?;
+            report.add_cleanup(target, size_before);
+        }
+    }
+    
+    // Create efficient symlink structure
+    create_binary_symlinks(&install_path).await?;
+    
+    // Compress logs and cache
+    compress_rotated_logs(&install_path).await?;
+    
+    Ok(report)
+}
+```
+
+---
+
+## 📋 4. UI Design Specifications
 
 ### 🎨 **Design System**
 
@@ -581,33 +1242,51 @@ fn validate_multiaddr(addr: &str) -> Result<Multiaddr, String> {
 - [x] Configuration management structure
 - [x] Process spawning and management
 
-### 🎯 **Phase 2: Essential Features (In Progress)**
-- [ ] **Network Selection Integration**
+### 🎯 **Phase 2: Auto-Setup System (Current Priority)**
+- [ ] **Environment Detection & Auto-Installation**
+  - [ ] System requirements checker
+  - [ ] Automatic Go/Git installation
+  - [ ] Disk space and permissions validation
+  - [ ] Internet connectivity testing
+- [ ] **Repository & Build Automation**
+  - [ ] Git clone with progress tracking
+  - [ ] Automated binary building (cannon, op-program, challenger)
+  - [ ] Critical file validation (prestate file)
+  - [ ] Build error recovery and retry logic
+- [ ] **Setup Wizard UI**
+  - [ ] Step-by-step progress interface
+  - [ ] Real-time log streaming
+  - [ ] Error handling with recovery suggestions
+  - [ ] Multiple setup modes (Express/Custom/Developer)
+
+### 🎯 **Phase 3: Essential Features (In Progress)**
+- [ ] **Smart Configuration System**
+  - [ ] Network-specific auto-configuration
+  - [ ] Community bootnode discovery
+  - [ ] Intelligent defaults generation
+  - [ ] Configuration validation and testing
+- [ ] **Enhanced User Experience**
+  - [ ] First-time setup wizard
+  - [ ] Configuration import/export
+  - [ ] Setup resume capability
+  - [ ] Offline installation mode
+- [ ] **Integration Features**
   - [ ] Superchain config integration
   - [ ] Auto-RPC endpoint detection
-  - [ ] Network-specific defaults
-- [ ] **P2P Bootnode Management**
-  - [ ] Multiaddr validation
+  - [ ] P2P network health monitoring
   - [ ] Community bootnode registry
-  - [ ] Connection testing
-- [ ] **Configuration Validation**
-  - [ ] RPC connectivity testing
-  - [ ] Contract address verification
-  - [ ] Error handling and user feedback
 
-### 🎯 **Phase 3: Advanced Features (Planned)**
+### 🎯 **Phase 4: Advanced Features (Planned)**
 - [ ] **Performance Optimization**
   - [ ] Process health monitoring
   - [ ] Resource usage tracking
   - [ ] Auto-restart capabilities
-- [ ] **Enhanced UI/UX**
-  - [ ] Configuration wizard for first-time users
+  - [ ] Installation size optimization
+- [ ] **Professional UI/UX**
   - [ ] Advanced settings organization
-  - [ ] Export/import configuration
-- [ ] **Integration Features**
   - [ ] Metrics dashboard
   - [ ] Alert notifications
-  - [ ] Community bootnode discovery
+  - [ ] Multi-language support
 
 ### 🎯 **Phase 4: Production Ready (Future)**
 - [ ] **Distribution & Updates**

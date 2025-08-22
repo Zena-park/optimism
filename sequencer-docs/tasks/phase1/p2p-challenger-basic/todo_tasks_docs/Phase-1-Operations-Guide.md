@@ -43,10 +43,10 @@
 - **메모리**: 8GB+ RAM
 - **디스크**: 100GB+ SSD
 - **네트워크**: 100Mbps+ 대역폭
-- **CPU**: 4코어+ 
+- **CPU**: 4코어+
 
 ### 필수 의존성
-- **Go**: 1.21+ 
+- **Go**: 1.21+
 - **Git**: 2.0+
 - **Make**: 최신 버전
 
@@ -58,8 +58,11 @@
 
 ```bash
 # Optimism 저장소 클론
-git clone https://github.com/ethereum-optimism/optimism.git
+git clone https://github.com/Zena-park/optimism.git
 cd optimism
+
+# P2P 챌린저 브랜치로 체크아웃
+git checkout feature/p2p-challenger-attention-test
 
 # op-challenger 빌드
 cd op-challenger
@@ -73,15 +76,48 @@ go build -o bin/op-challenger ./cmd/
 
 ```bash
 # Cannon (Fault Proof 시스템)
-git clone https://github.com/ethereum-optimism/cannon.git
 cd cannon
 make cannon
-cp bin/cannon /usr/local/bin/
+cd ..
 
-# op-program (프로그램 서버)
-cd ../op-program
-go build -o bin/op-program ./cmd/
-cp bin/op-program /usr/local/bin/
+# 빌드 확인
+ls -la cannon/bin/cannon*
+
+# op-program (프로그램 서버 + prestate 파일)
+cd op-program
+make op-program
+cd ..
+
+# 빌드 확인 - prestate 파일이 중요!
+ls -la op-program/bin/
+# 다음 파일들이 생성되어야 함:
+# - op-program (실행파일)
+# - prestate-mt64Next.bin.gz (19MB 압축된 초기 상태 파일)
+# - meta-mt64Next.json (메타데이터)
+# - prestate-proof-mt64Next.json (증명 데이터)
+
+# prestate 파일 존재 확인 (필수!)
+ls -la op-program/bin/prestate*.bin.gz
+```
+
+#### ⚠️ **중요: prestate 파일이 없으면 P2P 챌린저가 작동하지 않습니다!**
+
+`make op-program` 명령어는 다음을 포함한 **완전한 빌드**를 수행합니다:
+- ✅ **op-program 바이너리**: 프로그램 서버 실행파일
+- ✅ **prestate 파일**: Fault Proof에 필요한 초기 상태 (19MB)
+- ✅ **메타데이터 파일**: 시스템 설정 정보
+- ✅ **증명 데이터**: 검증에 필요한 데이터
+
+#### 선택사항: 시스템 경로에 복사
+
+```bash
+# 시스템 전체에서 사용하려면 (선택사항)
+sudo cp cannon/bin/cannon /usr/local/bin/
+sudo cp op-program/bin/op-program /usr/local/bin/
+
+# 권한 확인
+which cannon
+which op-program
 ```
 
 ### 3. 데이터 디렉토리 설정
@@ -107,7 +143,8 @@ mkdir -p ~/.optimism/challenger/keys
 
 #### Sepolia 테스트넷에서 P2P 활성화
 ```bash
-./bin/op-challenger \
+# optimism 루트 디렉토리에서 실행
+./op-challenger/bin/op-challenger \
     --network "sepolia" \
     --l1-eth-rpc "https://ethereum-sepolia-rpc.publicnode.com" \
     --l1-beacon "https://ethereum-sepolia-beacon-api.publicnode.com" \
@@ -119,14 +156,16 @@ mkdir -p ~/.optimism/challenger/keys
     --p2p-network-id "optimism-challenger-sepolia" \
     --p2p-max-peers 50 \
     --p2p-discovery-enabled \
-    --cannon-bin "/usr/local/bin/cannon" \
-    --cannon-server "/usr/local/bin/op-program" \
+    --cannon-bin "./cannon/bin/cannon" \
+    --cannon-server "./op-program/bin/op-program" \
+    --cannon-prestate "./op-program/bin/prestate-mt64Next.bin.gz" \
     --log.level "info"
 ```
 
 #### 메인넷에서 P2P 활성화
 ```bash
-./bin/op-challenger \
+# optimism 루트 디렉토리에서 실행
+./op-challenger/bin/op-challenger \
     --network "mainnet" \
     --l1-eth-rpc "https://ethereum-rpc.publicnode.com" \
     --l1-beacon "https://ethereum-beacon-api.publicnode.com" \
@@ -139,8 +178,9 @@ mkdir -p ~/.optimism/challenger/keys
     --p2p-network-id "optimism-challenger-mainnet" \
     --p2p-max-peers 100 \
     --p2p-discovery-enabled \
-    --cannon-bin "/usr/local/bin/cannon" \
-    --cannon-server "/usr/local/bin/op-program" \
+    --cannon-bin "./cannon/bin/cannon" \
+    --cannon-server "./op-program/bin/op-program" \
+    --cannon-prestate "./op-program/bin/prestate-mt64Next.bin.gz" \
     --metrics-enabled \
     --metrics-addr "0.0.0.0" \
     --metrics-port 7300 \
@@ -168,9 +208,10 @@ export OP_CHALLENGER_P2P_DISCOVERY_ENABLED=true
 export OP_CHALLENGER_P2P_RATE_LIMIT=1000
 export OP_CHALLENGER_P2P_CONNECTION_LIMIT=100
 
-# 바이너리 경로
-export OP_CHALLENGER_CANNON_BIN="/usr/local/bin/cannon"
-export OP_CHALLENGER_CANNON_SERVER="/usr/local/bin/op-program"
+# 바이너리 경로 (상대 경로 사용)
+export OP_CHALLENGER_CANNON_BIN="./cannon/bin/cannon"
+export OP_CHALLENGER_CANNON_SERVER="./op-program/bin/op-program"
+export OP_CHALLENGER_CANNON_PRESTATE="./op-program/bin/prestate-mt64Next.bin.gz"
 
 # 로깅 및 메트릭
 export OP_CHALLENGER_LOG_LEVEL="info"
@@ -184,23 +225,24 @@ export OP_CHALLENGER_METRICS_PORT=7300
 # 환경변수 로드
 source /opt/optimism/challenger/.env
 
-# 챌린저 실행 (환경변수 사용)
-./bin/op-challenger
+# 챌린저 실행 (환경변수 사용) - optimism 루트 디렉토리에서
+./op-challenger/bin/op-challenger
 ```
 
 ### 3. P2P 없이 실행 (기본 모드)
 
 ```bash
-# P2P 비활성화 (기본값)
-./bin/op-challenger \
+# P2P 비활성화 (기본값) - optimism 루트 디렉토리에서
+./op-challenger/bin/op-challenger \
     --network "sepolia" \
     --l1-eth-rpc "https://ethereum-sepolia-rpc.publicnode.com" \
     --l1-beacon "https://ethereum-sepolia-beacon-api.publicnode.com" \
     --l2-eth-rpc "https://sepolia.optimism.io" \
     --rollup-rpc "https://sepolia.optimism.io" \
     --datadir "/opt/optimism/challenger" \
-    --cannon-bin "/usr/local/bin/cannon" \
-    --cannon-server "/usr/local/bin/op-program"
+    --cannon-bin "./cannon/bin/cannon" \
+    --cannon-server "./op-program/bin/op-program" \
+    --cannon-prestate "./op-program/bin/prestate-mt64Next.bin.gz"
     # --p2p-enabled=false는 기본값이므로 생략 가능
 ```
 
@@ -229,7 +271,7 @@ source /opt/optimism/challenger/.env
 --p2p-listen-addr "/ip4/0.0.0.0/tcp/9876"
 --p2p-listen-addr "/ip4/192.168.1.100/tcp/9876"
 
-# IPv6 TCP 주소  
+# IPv6 TCP 주소
 --p2p-listen-addr "/ip6/::/tcp/9876"
 --p2p-listen-addr "/ip6/::1/tcp/9876"
 
@@ -270,29 +312,29 @@ chmod 600 /opt/optimism/challenger/keys/p2p-key.pem
 ### 1. CLI 플래그 확인
 
 ```bash
-# 모든 P2P 플래그 확인
-./bin/op-challenger --help | grep p2p
+# 모든 P2P 플래그 확인 - optimism 루트 디렉토리에서
+./op-challenger/bin/op-challenger --help | grep p2p
 
 # 실제 출력 예시:
 #   --p2p-bootnodes value                                                  ($OP_CHALLENGER_P2P_BOOTNODES)
 #          List of P2P bootstrap nodes in multiaddr format
-#   
+#
 #   --p2p-connection-limit value        (default: 100)                     ($OP_CHALLENGER_P2P_CONNECTION_LIMIT)
 #          Maximum number of concurrent connections
-#   
+#
 #   --p2p-discovery-enabled             (default: true)                    ($OP_CHALLENGER_P2P_DISCOVERY_ENABLED)
 #          Enable DHT-based peer discovery
-#   
+#
 #   --p2p-enabled                       (default: false)                   ($OP_CHALLENGER_P2P_ENABLED)
 #          Enable P2P networking for challenger coordination
 ```
 
 ### 2. P2P 네트워크 테스트
 
-#### 단일 노드 P2P 테스트
+#### 다중 노드 P2P 테스트
 ```bash
-# 터미널 1: 첫 번째 노드 (부트스트랩)
-./bin/op-challenger \
+# 터미널 1: 첫 번째 노드 (부트스트랩) - optimism 루트 디렉토리에서
+./op-challenger/bin/op-challenger \
     --network "sepolia" \
     --l1-eth-rpc "https://ethereum-sepolia-rpc.publicnode.com" \
     --l1-beacon "https://ethereum-sepolia-beacon-api.publicnode.com" \
@@ -302,12 +344,13 @@ chmod 600 /opt/optimism/challenger/keys/p2p-key.pem
     --p2p-enabled \
     --p2p-listen-addr "/ip4/0.0.0.0/tcp/9876" \
     --p2p-network-id "test-network" \
-    --cannon-bin "/usr/local/bin/cannon" \
-    --cannon-server "/usr/local/bin/op-program" \
+    --cannon-bin "./cannon/bin/cannon" \
+    --cannon-server "./op-program/bin/op-program" \
+    --cannon-prestate "./op-program/bin/prestate-mt64Next.bin.gz" \
     --log.level "debug"
 
-# 터미널 2: 두 번째 노드 (피어)
-./bin/op-challenger \
+# 터미널 2: 두 번째 노드 (피어) - optimism 루트 디렉토리에서  
+./op-challenger/bin/op-challenger \
     --network "sepolia" \
     --l1-eth-rpc "https://ethereum-sepolia-rpc.publicnode.com" \
     --l1-beacon "https://ethereum-sepolia-beacon-api.publicnode.com" \
@@ -318,8 +361,9 @@ chmod 600 /opt/optimism/challenger/keys/p2p-key.pem
     --p2p-listen-addr "/ip4/0.0.0.0/tcp/9877" \
     --p2p-bootnodes "/ip4/127.0.0.1/tcp/9876/p2p/[NODE1_PEER_ID]" \
     --p2p-network-id "test-network" \
-    --cannon-bin "/usr/local/bin/cannon" \
-    --cannon-server "/usr/local/bin/op-program" \
+    --cannon-bin "./cannon/bin/cannon" \
+    --cannon-server "./op-program/bin/op-program" \
+    --cannon-prestate "./op-program/bin/prestate-mt64Next.bin.gz" \
     --log.level "debug"
 ```
 
@@ -713,8 +757,8 @@ groups:
         for: 1m
         annotations:
           summary: "Challenger is down"
-      
-      - alert: LowPeerCount  
+
+      - alert: LowPeerCount
         expr: libp2p_peers_connected < 5
         for: 5m
         annotations:
