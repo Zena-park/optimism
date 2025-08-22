@@ -1,8 +1,8 @@
-# RAT (Randomized Attention Test) 통합 계획
+# Attention Test 통합 계획
 
 ## 🔄 서비스 플로우
 
-RAT 시스템의 전체 서비스 플로우는 다음과 같습니다:
+Attention Test 시스템의 전체 서비스 플로우는 다음과 같습니다:
 
 1. **챌린저 네트워크 연결**: 챌린저들이 P2P 네트워크에 참여하여 서로를 발견하고 연결
 2. **Dispute Game 모니터링 및 검증**: L1 체인을 모니터링하여 새로운 Dispute Game 발생 감지, Dispute Game 발생 시 Enhanced Verifier를 통한 검증 수행
@@ -78,7 +78,7 @@ flowchart TD
 
 ## 📋 개요
 
-기존 P2P 챌린저 기본 구현에 RAT (Randomized Attention Test) 프로토콜을 확장하여 챌린저들이 서로에게 지속적으로 어텐션하고 있는지 확인하고, Optimistic Rollups의 검증자 무임승차 문제를 해결합니다.
+기존 P2P 챌린저 기본 구현에 Attention Test 프로토콜을 확장하여 챌린저들이 서로에게 지속적으로 어텐션하고 있는지 확인하고, Optimistic Rollups의 검증자 무임승차 문제를 해결합니다.
 
 
 ### 🔄 **최근 설계 변경사항**
@@ -86,7 +86,7 @@ flowchart TD
 - **배치 번호 기준 비율**: 배치 번호 % 100 < 트리거 비율로 간단하고 정확한 트리거
 - **개인 최적화**: 각 챌린저가 자신의 평판점수, 리소스 상황, 목표에 맞게 트리거 비율 조정 가능
 
-## 🎯 RAT 프로토콜 기본 플로우 (컨트랙트 없이, RAT Controller 없이)
+## 🎯 Attention Test 프로토콜 기본 플로우 (컨트랙트 없이, Attention Test Controller 없이)
 
 ### **1단계: 챌린저 네트워크 참여**
 - 챌린저들이 P2P 네트워크에 참여

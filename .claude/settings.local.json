@@ -30,9 +30,42 @@
       "Bash(PWD=/Users/zena/gitwork/optimism/op-challenger-tray-tauri cargo build)",
       "Bash(git push:*)",
       "Bash(git commit -m \"fix: Resolve web initialization and alignment issues\n\n- Fix Tauri API initialization with proper null checks\n- Implement native system UI styling for better user experience  \n- Fix right alignment issues in status badges and card headers\n- Add browser mode compatibility for development\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git rm -r --cached op-challenger-tray-tauri/target/)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:eprint.iacr.org)",
+      "WebFetch(domain:blog.infura.io)",
+      "WebFetch(domain:www.infura.io)",
+      "WebFetch(domain:www.usenix.org)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:docs.arbitrum.io)",
+      "WebFetch(domain:nakamotoinstitute.org)",
+      "WebFetch(domain:ieeexplore.ieee.org)",
+      "WebFetch(domain:www.researchgate.net)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:ethresear.ch)",
+      "Bash(just op-challenger:*)",
+      "Bash(PWD=/Users/zena/gitwork/optimism/op-challenger go build -o bin/op-challenger ./cmd)",
+      "Bash(/Users/zena/gitwork/optimism/op-challenger/bin/op-challenger --help)",
+      "Bash(system_profiler:*)",
+      "Bash(PWD=/Users/zena/gitwork/optimism-challenger-tray cargo build)",
+      "Bash(rustup:*)",
+      "Bash(./create_macos_app.sh:*)",
+      "Bash(PWD=/Users/zena/gitwork/optimism-challenger-tray ./create_macos_app.sh)",
+      "Bash(bash:*)",
+      "Bash(rm:*)",
+      "Bash(/Users/zena/gitwork/optimism/op-challenger/op-challenger --help)",
+      "Bash(kurtosis enclave:*)",
+      "Bash(kurtosis service logs:*)",
+      "Bash(cat:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs:*)",
+      "Bash(kurtosis files download:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/Users/zena/gitwork/optimism-challenger-tray"
+    ]
   }
 }

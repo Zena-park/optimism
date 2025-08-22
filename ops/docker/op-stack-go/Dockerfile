@@ -23,7 +23,7 @@ ARG ASTERISC_VERSION=none
 # We may be cross-building for another platform. Specify which platform we need as builder.
 FROM --platform=$BUILDPLATFORM golang:1.23.8-alpine3.20 AS builder
 
-RUN apk add --no-cache curl tar gzip make gcc musl-dev linux-headers git jq bash
+RUN apk add --no-cache curl tar gzip make gcc musl-dev  git jq bash
 
 # Install mise (the apk version is outdated)
 RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
@@ -36,7 +36,13 @@ RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_$TARG
 
 # Install versioned toolchain
 COPY ./mise.toml .
-RUN mise trust && mise install -v -y just && cp $(mise which just) /usr/local/bin/just && just --version
+# GitHub API rate limit 문제를 우회하기 위해 just를 직접 설치
+RUN wget https://github.com/casey/just/releases/download/1.37.0/just-1.37.0-x86_64-unknown-linux-musl.tar.gz && \
+    tar -xzf just-1.37.0-x86_64-unknown-linux-musl.tar.gz && \
+    cp just /usr/local/bin/just && \
+    chmod +x /usr/local/bin/just && \
+    rm just-1.37.0-x86_64-unknown-linux-musl.tar.gz && \
+    just --version
 
 # We copy the go.mod/sum first, so the `go mod download` does not have to re-run if dependencies do not change.
 COPY ./go.mod /app/go.mod
@@ -52,6 +58,16 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 
 # NOTE: the Dockerfile.dockerignore file effectively describes all dependencies
 COPY . /app
+
+# Fix go-libp2p-mplex compatibility issues in Docker build
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build go mod download && \
+    cd /go/pkg/mod/github.com/libp2p/go-libp2p-mplex@v0.9.0 && \
+    if ! grep -q "func (c \*conn) CloseWithError" conn.go; then \
+        sed -i '/var _ network.MuxedConn = &conn{}/a\\nfunc (c *conn) CloseWithError(code network.ConnErrorCode) error {\n\treturn c.mplex().Close()\n}' conn.go; \
+    fi && \
+    if ! grep -q "func (s \*stream) ResetWithError" stream.go; then \
+        sed -i '/var _ network.MuxedStream = &stream{}/a\\nfunc (s *stream) ResetWithError(code network.StreamErrorCode) error {\n\treturn s.mplex().Reset()\n}' stream.go; \
+    fi
 
 # We avoid copying the full .git dir into the build for just some metadata.
 # Instead, specify:
@@ -102,13 +118,13 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 
 FROM --platform=$BUILDPLATFORM builder AS op-node-builder
 ARG OP_NODE_VERSION=v0.0.0
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-node && make op-node  \
-  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE VERSION="$OP_NODE_VERSION"
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-node && \
+  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE VERSION="$OP_NODE_VERSION" just op-node
 
 FROM --platform=$BUILDPLATFORM builder AS op-challenger-builder
 ARG OP_CHALLENGER_VERSION=v0.0.0
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-challenger && make op-challenger  \
-  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE  VERSION="$OP_CHALLENGER_VERSION"
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-challenger && \
+  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE VERSION="$OP_CHALLENGER_VERSION" just op-challenger
 
 FROM --platform=$BUILDPLATFORM builder AS op-dispute-mon-builder
 ARG OP_DISPUTE_MON_VERSION=v0.0.0
@@ -117,13 +133,13 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 
 FROM --platform=$BUILDPLATFORM builder AS op-batcher-builder
 ARG OP_BATCHER_VERSION=v0.0.0
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-batcher && make op-batcher  \
-  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE  VERSION="$OP_BATCHER_VERSION"
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-batcher && \
+  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE VERSION="$OP_BATCHER_VERSION" just op-batcher
 
 FROM --platform=$BUILDPLATFORM builder AS op-proposer-builder
 ARG OP_PROPOSER_VERSION=v0.0.0
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-proposer && make op-proposer  \
-  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE  VERSION="$OP_PROPOSER_VERSION"
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build cd op-proposer && \
+  GOOS=$TARGETOS GOARCH=$TARGETARCH GITCOMMIT=$GIT_COMMIT GITDATE=$GIT_DATE VERSION="$OP_PROPOSER_VERSION" just op-proposer
 
 FROM --platform=$BUILDPLATFORM builder AS op-conductor-builder
 ARG OP_CONDUCTOR_VERSION=v0.0.0
@@ -190,7 +206,9 @@ FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/asterisc:$ASTERISC_VERSION 
 
 # Also produce an op-challenger loaded with kona and asterisc using ubuntu
 FROM $UBUNTU_TARGET_BASE_IMAGE AS op-challenger-target
-RUN apt-get update && apt-get install -y --no-install-recommends musl openssl ca-certificates
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    musl-tools openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=op-challenger-builder /app/op-challenger/bin/op-challenger /usr/local/bin/
 # Copy in op-program and cannon
 COPY --from=op-program-builder /app/op-program/bin/op-program /usr/local/bin/

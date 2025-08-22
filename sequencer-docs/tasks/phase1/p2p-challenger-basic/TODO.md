@@ -1,7 +1,7 @@
-# RAT (Randomized Attention Test) 구현 TODO 리스트
+# Attention Test 구현 TODO 리스트
 
 ## 📋 개요
-이 문서는 RAT_INTEGRATION_PLAN.md를 기반으로 한 구체적인 구현 TODO 리스트입니다.
+이 문서는 Attention Test 시스템을 기반으로 한 구체적인 구현 TODO 리스트입니다.
 **어텐션 테스트를 위한 핵심 기능 구현에 집중합니다.**
 
 ### 🗓️ **개발 Phase 일정**
@@ -203,7 +203,7 @@
 
 #### **TODO 5.2: 기존 gameMonitor 확장**
 - [ ] `game/monitor.go`의 `gameMonitor` 확장
-  - [ ] RAT 트리거를 위한 이벤트 후킹 추가
+  - [ ] Attention Test 트리거를 위한 이벤트 후킹 추가
   - [ ] 어텐션 테스트 실행 시점 연결
   - [ ] 게임 생성 시 P2P 네트워크 알림
 - [ ] 기존 `attentionTrigger` 확장
@@ -258,7 +258,7 @@
 - [ ] `op-challenger/p2p/attention/trigger.go` 파일 생성
 - [ ] `AttentionTrigger` 구조체 구현
 - [ ] `NewAttentionTrigger()` 함수 구현
-- [ ] `StartRATMonitoring()` 메서드 구현
+- [ ] `StartAttentionTestMonitoring()` 메서드 구현
 - [ ] `game/service.go`의 기존 import와 호환되도록 구현
 
 #### **TODO 7.2: 어텐션 테스트 구조 확장**
@@ -493,4 +493,4 @@
 ## 📚 참고 문서
 
 - [op-challenger-analysis.md](../../../op-challenger-analysis.md) - 챌린저 개선 제안 및 직접 배치 데이터 검증 시스템 설계
-- [RAT_INTEGRATION_PLAN.md](../RAT_INTEGRATION_PLAN.md) - RAT 통합 계획
+- [RAT_INTEGRATION_PLAN.md](../RAT_INTEGRATION_PLAN.md) - Attention Test 통합 계획
