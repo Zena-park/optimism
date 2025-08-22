@@ -58,3 +58,24 @@ crytic-export
 **/*backup*
 *.log
 **/.rustc_info.json
+
+# Optimism P2P Challenger Development
+# Built binaries
+op-batcher/op-batcher
+op-challenger/op-challenger
+op-deployer/op-deployer
+op-faucet/op-faucet
+op-node/op-node
+op-proposer/op-proposer
+
+# Kurtosis Devnet temporary files
+kurtosis-devnet/challenger-config.yaml
+kurtosis-devnet/simple-devnet-*/
+
+# Local configuration files
+.claude/settings.local.json
+mise.toml
+
+# Local development artifacts
+**/devnet-*
+**/tmp/devnet-*
